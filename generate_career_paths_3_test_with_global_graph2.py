@@ -822,7 +822,7 @@ def print_paths(depriotize_starts, major_title_dict1, major_title_dict2,
         joblib.dump(
             edges, '/mnt/data/rohit/major_edge_count/' +
             "_".join(re.sub("\W+", " ", major).split()) + '_edge_counts.pkl')
-        while major_edge_count_threshold > -1 and iterate_over_degrees:
+        while major_edge_count_threshold > 0 and iterate_over_degrees:
             career_graph = create_graph(edges, sts, ets,
                                         major_edge_count_threshold)
             [result_paths, edges] = print_paths_iterator(
