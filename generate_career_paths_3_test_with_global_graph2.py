@@ -14,6 +14,9 @@ from configurator import configurator
 import utils
 from filter_chain import remove_stop_words
 from sklearn.externals import joblib
+from functools import partial
+from multiprocessing import Pool
+import math
 
 dbutils = DBUtils(db_name='zippia', host='master.mongodb.d.int.zippia.com')
 db_local = DBUtils(db_name='test', host='localhost')
@@ -211,7 +214,6 @@ def manage_edges(edge_dict, resume_count, depriotize_starts):
         threshold = 50
     else:
         threshold = 100
-#     global_weights= {}
     new_degree_edges = {}
     all_nodes = set()
     for edge in edge_dict:
@@ -250,15 +252,12 @@ def manage_edges(edge_dict, resume_count, depriotize_starts):
                 elif (node2, node1) in edge_dict:
                     new_degree_edges[(node1, node2)]['time_intervals'].extend(
                         edge_dict[(node2, node1)]['time_intervals'])
-
-#                 if (node1, node2) not in global_weights:
-#                     global_weights[(node1, node2)]= []
-#                 global_weights[(node1, node2)].extend(new_degree_edges[(node1, node2)]['time_intervals'])
     return new_degree_edges
 
 
 def create_graph_for_majors(major, degrees, work_meta_info, min_conf,
                             depriotize_starts):
+    dbutils = DBUtils(db_name='zippia', host='master.mongodb.d.int.zippia.com')
     edges = {}
     nodes = set()
     resume_count = 0
@@ -559,8 +558,9 @@ def support_calculation(top_k_start, top_k_end, end_titles, start_titles,
                             all_paths.append([new_path2, l])
                             for i, node1 in enumerate(new_path2[:-1]):
                                 node2 = new_path2[i + 1]
-                                if (node1, node2) not in edges:
-                                    median_time = 0
+                                if (node1, node2) not in edges or not edges[(
+                                        node1, node2)]['time_intervals']:
+                                    overall_median_time = 0
                                     start_index = new_path.index(node1)
                                     end_index = new_path.index(node2)
                                     for j, node3 in enumerate(new_path[
@@ -574,9 +574,16 @@ def support_calculation(top_k_start, top_k_end, end_titles, start_titles,
                                                     and node4 in
                                                     title_time_dict) else ''
                                             if not median_time:
+                                                overall_median_time = ""
                                                 break
-                                        if not edges[(node3, node4
-                                                      )]['time_intervals']:
+                                            edges[(node3, node4)] = {}
+                                            edges[(node3, node4)]['count'] = 1
+                                            edges[(node3, node4
+                                                   )]['time_intervals'] = [
+                                                       median_time
+                                                   ]
+                                        elif not edges[(node3, node4
+                                                        )]['time_intervals']:
                                             median_time = abs(
                                                 title_time_dict[node4] -
                                                 title_time_dict[node3]) if (
@@ -584,15 +591,22 @@ def support_calculation(top_k_start, top_k_end, end_titles, start_titles,
                                                     and node4 in
                                                     title_time_dict) else ''
                                             if not median_time:
+                                                overall_median_time = ""
                                                 break
-                                        median_time += np.median(edges[(
-                                            node3, node4)]['time_intervals'])
-                                    if median_time:
-                                        edges[(node1, node2)] = {}
-                                        edges[(node1, node2)]['count'] = 1
-                                        edges[(
-                                            node1, node2
-                                        )]['time_intervals'] = [median_time]
+                                            edges[(node3, node4
+                                                   )]['time_intervals'] = [
+                                                       median_time
+                                                   ]
+                                        overall_median_time += np.median(edges[
+                                            (node3, node4)]['time_intervals'])
+                                    if overall_median_time:
+                                        if (node1, node2) not in edges:
+                                            edges[(node1, node2)] = {}
+                                            edges[(node1, node2)]['count'] = 1
+                                        edges[(node1,
+                                               node2)]['time_intervals'] = [
+                                                   overall_median_time
+                                               ]
                 except:
                     pass
         for i, path in enumerate(all_paths):
@@ -680,14 +694,14 @@ def print_paths_iterator(
                 new_obj['socCode'] = title_skills[title][
                     'soc_code'] if title in title_skills else ""
                 if edge in edges:
-                    new_obj['medianYrs'] = np.median(edges[edge][
-                        'time_intervals']) if edges[edge][
-                            'time_intervals'] else ""
-                else:
-                    new_obj['medianYrs'] = abs(title_time_dict[edge[
-                        1]] - title_time_dict[edge[0]]) if (
-                            edge[0] in title_time_dict and
-                            edge[1] in title_time_dict) else ""
+                    new_obj['medianYrs'] = math.ceil(
+                        np.median(edges[edge]['time_intervals'])) if edges[
+                            edge]['time_intervals'] else ""
+                if not new_obj['medianYrs']:
+                    new_obj['medianYrs'] = math.ceil(
+                        abs(title_time_dict[edge[1]] - title_time_dict[edge[
+                            0]])) if (edge[0] in title_time_dict and
+                                      edge[1] in title_time_dict) else ""
                 new_obj['skills'] = []
                 new_skills_count = 0
                 for skill in next_skills:
@@ -781,17 +795,17 @@ def combine_start_and_end_titles(titles_dict):
     return [sts, ets]
 
 
-def print_paths(depriotize_starts,
-                major_title_dict,
-                degrees,
-                work_meta_info,
-                min_conf,
-                required_skills_threshold=5,
-                top_k=30,
-                edge_count_threshold=3):
-    collection_name = "careerPathsForMajors5"
+def print_paths(depriotize_starts, major_title_dict1, major_title_dict2,
+                degrees, work_meta_info, min_conf, required_skills_threshold,
+                top_k, edge_count_threshold, index_val):
+    collection_name = "careerPathsForMajors_test_time"
+    db_local = DBUtils(db_name='test', host='localhost')
     title_skills = read_skill_master()
     title_time_dict = read_local_skill_master()
+    if index_val == 1:
+        major_title_dict = major_title_dict1
+    else:
+        major_title_dict = major_title_dict2
     for major, titles_dict in major_title_dict.items():
         start_time = time.time()
         final_valid_paths = {}
@@ -866,6 +880,7 @@ def print_paths(depriotize_starts,
 
 
 def read_skill_master():
+    dbutils = DBUtils(db_name='zippia', host='master.mongodb.d.int.zippia.com')
     skill_master_dict = {}
     cursor = dbutils.fetch_data(
         configurator.commons.SKILL_MASTER, 'cursor', {},
@@ -882,6 +897,7 @@ def read_skill_master():
 
 
 def read_local_skill_master():
+    db_zippia2 = DBUtils(db_name='zippia2', host='localhost')
     skill_master_dict = {}
     cursor = db_zippia2.fetch_data(configurator.commons.SKILL_MASTER, 'cursor',
                                    {},
@@ -892,6 +908,12 @@ def read_local_skill_master():
             skill_master_dict[elem['lay_title']] = {}
             skill_master_dict[elem['lay_title']] = elem['median_time_to_reach']
     return skill_master_dict
+
+
+def fetch_coverd_majors():
+    collection_name = "careerPathsForMajors5"
+    cursor = db_local.fetch_data(collection_name, 'cursor', {}, {'name': 1})
+    return set([elem['name'] for elem in cursor])
 
 
 def path_main_function():
@@ -922,10 +944,63 @@ def path_main_function():
     major_title_dict = read_start_titles_and_end_titles(
         top_k_start=30, top_k_end=50, depriotize_starts=depriotize_starts)
     print "major title dict created successfully"
-    print_paths(depriotize_starts, major_title_dict, degrees, work_meta_info,
-                min_conf)
+    test_majot_title_dict = {}
+    for major in [
+            "Biomathematics, Bioinformatics, and Computational Biology",
+            "Ecology, Evolution, Systematics, and Population Biology"
+    ]:  #"Economics", "Political Science and Government", "Biology", "Chemistry", "Computer Science", "Statistics", "Physics",
+        test_majot_title_dict[major] = major_title_dict[
+            major] if major in major_title_dict else {}
+    major_title_dict = test_majot_title_dict
+    print_paths(depriotize_starts, major_title_dict, {}, degrees,
+                work_meta_info, min_conf, 5, 30, 3, 1)
+    print "Done"
+
+
+def path_main_function_parallel():
+    depriotize_starts = set([
+        "Assistant Internship", "Externship", "Volunteer", "Tutor",
+        "Administrative Assistant", "Cashier", "Customer Service",
+        "Customer Service Representative", "Server", "Bartender", "Waiter",
+        "Waitress", "Instructor"
+    ])
+    work_start_index = 1
+    work_end_index = 15
+    work_prefix = "W"
+    work_meta_info = []
+    min_conf = 0
+    degrees = set([
+        "Bachelors", "Masters", "Doctorate", "Certificate", "Associate",
+        "License", "Diploma", "Other"
+    ])
+    for index in range(work_start_index, work_end_index + 1):
+        index_str = str(index)
+        work_meta_info_obj = {}
+        work_meta_info_obj["title"] = "closest_lay_title_" + index_str
+        work_meta_info_obj["confidence"] = "max_confidence_" + index_str
+        work_meta_info_obj["match"] = "is_match_" + index_str
+        work_meta_info_obj["from"] = work_prefix + index_str + "Duration From"
+        work_meta_info_obj["to"] = work_prefix + index_str + "Duration To"
+        work_meta_info.append(work_meta_info_obj)
+    major_title_dict = read_start_titles_and_end_titles(
+        top_k_start=30, top_k_end=50, depriotize_starts=depriotize_starts)
+    print "major title dict created successfully"
+    test1 = {}
+    test2 = {}
+    major_keys = major_title_dict.keys()
+    middle_index = len(major_title_dict) / 2
+    for i in range(middle_index + 1):
+        test1[major_keys[i]] = major_title_dict[major_keys[i]]
+    for i in range(middle_index + 1, len(major_keys)):
+        test2[major_keys[i]] = major_title_dict[major_keys[i]]
+    del major_title_dict
+    func = partial(print_paths, depriotize_starts, test1, test2, degrees,
+                   work_meta_info, min_conf, 5, 30, 3)
+    p = Pool(2)
+    p.map(func, [1, 2])
+    p.close()
     print "Done"
 
 
 if __name__ == "__main__":
-    path_main_function()
+    path_main_function_parallel()
