@@ -134,27 +134,26 @@ if __name__ == "__main__":
     print "Started at {}".format(start_time)
     db_utils = DBUtils(
         db_name='zippia', host='master.mongodb.d.int.zippia.com')
-    title_durations = compute_median_career_time(db_utils, work_meta_info)
-    joblib.dump(title_durations,
-                '/mnt/data/rohit/title_time_dict_16_jan_2017.pkl')
+    try:
+        title_durations = joblib.load(
+            "/mnt/data/rohit/title_time_dict_16_jan_2017.pkl")
+    except:
+        title_durations = compute_median_career_time(db_utils, work_meta_info)
+        joblib.dump(title_durations,
+                    '/mnt/data/rohit/title_time_dict_16_jan_2017.pkl')
     title_durations = merge_all_soc_levels(title_durations)
     f = open('title_time_file.csv', 'wb')
-    f.write("Title\tMedian_time_to_reach\ttotal_available_times\n")
+    #     f.write("Title\tMedian_time_to_reach\ttotal_available_times\n")
     for title, time_list in title_durations.items():
         if time_list:
-            f.write('{}\t{}\t{}\n'.format(
-                title, numpy.median(time_list), len(time_list)))
+            f.write(
+                '{}\t{}\t{}\n'.format(title,
+                                      len(time_list), "\t".join(
+                                          str(numpy.percentile(time_list, i))
+                                          for i in range(50, 100))))
         else:
             print title, "has no time data."
     f.close()
-    #     try:
-    #         title_durations= joblib.load("/mnt/data/rohit/title_durations.pkl")
-    #     except:
-    #         title_durations = compute_median_career_time(db_utils, work_meta_info)
-    #         joblib.dump(title_durations, '/mnt/data/rohit/title_durations.pkl')
-    #     print len(title_durations)
-    #     print title_durations.items()[0]
-    #     update_skill_master(db_utils, title_durations)
     end_time = time.time()
     print "Done at {} in {} seconds.".format(
         end_time, int(round((end_time - start_time), 0)))
