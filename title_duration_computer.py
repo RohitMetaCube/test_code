@@ -48,6 +48,7 @@ def is_valid_work_experience(resume, current_work_ex_meta_info, min_conf=0):
 
 def compute_median_career_time(db_utils,
                                work_meta_info,
+                               min_conf=0,
                                soc_level=configurator.commons.SOC_LEVEL):
     ''' Creating an array of work ex index attributes '''
     from_index = 1
@@ -58,11 +59,12 @@ def compute_median_career_time(db_utils,
     resumes = db_utils.fetch_data("resume", "cursor", {"Duplicate": False})
     ''' Iterating over the cursor to find the transition times for each title '''
     for resume in resumes:
+
         resume_count += 1
         if resume_count % 10000 == 0:
             print "Processed {} resumes".format(resume_count)
         career_start_date = None
-        for index in range(from_index - 1, to_index):
+        for index in list(reversed(range(from_index - 1, to_index))):
             ''' Check whether the given work experience is a valid one, in case it is we need to do further processing otherwise not '''
             current_work_ex_meta_info = work_meta_info[index]
             if is_valid_work_experience(resume, current_work_ex_meta_info,
@@ -94,9 +96,14 @@ def merge_all_soc_levels(title_durations):
     title_time = {}
     for title_tuple, time_list in title_durations.items():
         title = title_tuple[0]
+        #         time_list= sorted(time_list)
+        #         try:
+        #             last_zero_index= len(time_list)-time_list[::-1].index(0)
+        #         except:
+        last_zero_index = 0
         if title not in title_time:
             title_time[title] = []
-        title_time[title].extend(time_list)
+        title_time[title].extend(time_list[last_zero_index:])
     return title_time
 
 
@@ -136,14 +143,14 @@ if __name__ == "__main__":
         db_name='zippia', host='master.mongodb.d.int.zippia.com')
     try:
         title_durations = joblib.load(
-            "/mnt/data/rohit/title_time_dict_16_jan_2017.pkl")
+            "/mnt/data/rohit/title_time_dict_17_jan_2017.pkl")
     except:
         title_durations = compute_median_career_time(db_utils, work_meta_info)
         joblib.dump(title_durations,
-                    '/mnt/data/rohit/title_time_dict_16_jan_2017.pkl')
+                    '/mnt/data/rohit/title_time_dict_17_jan_2017.pkl')
     title_durations = merge_all_soc_levels(title_durations)
     f = open('title_time_file.csv', 'wb')
-    #     f.write("Title\tMedian_time_to_reach\ttotal_available_times\n")
+    f.write("Title\tMedian_time_to_reach\ttotal_available_times\n")
     for title, time_list in title_durations.items():
         if time_list:
             f.write(
