@@ -1,6 +1,7 @@
 from db_utils import DBUtils
 from utils import find_all_ngrams_upto
 import re
+import csv
 
 db = DBUtils(db_name='JobListings', host='master.mongodb.d.int.zippia.com')
 
@@ -19,7 +20,7 @@ def print_ngrams_for_mg():
     for elem in cursor:
         title = elem['titleDisplay']
         title = re.sub("\W+", " ", title)
-        n_grams = find_all_ngrams_upto(title, n=4)
+        n_grams = find_all_ngrams_upto(title.lower(), n=4)
         for ng in n_grams:
             if ng not in n_gram_freq:
                 n_gram_freq[ng] = 0
@@ -52,7 +53,7 @@ def print_ngram_stats():
             continue
         title = elem['titleDisplay']
         title = re.sub("\W+", " ", title)
-        n_grams = find_all_ngrams_upto(title, n=4)
+        n_grams = find_all_ngrams_upto(title.lower(), n=4)
         for ng in n_grams:
             if ng in selected_ngrams:
                 if ng not in n_gram_freq:
@@ -76,6 +77,29 @@ def print_ngram_stats():
     f.close()
 
 
+def read_csv_and_create_ngrams():
+    f = open('/home/rohit/Desktop/selected_ngrams.csv', 'rb')
+    fr = csv.reader(f, delimiter='\t')
+    selected_entries = {}
+    for row in fr:
+        [title, count_53, overall_major_sum
+         ] = [row[0], int(row[1]), int(row[3])]
+        title = title.lower()
+        if title not in selected_entries:
+            selected_entries[title] = [0, 0]
+        selected_entries[title][0] += count_53
+        selected_entries[title][1] += overall_major_sum
+    f.close()
+
+    f = open('/home/rohit/Desktop/selected_ngrams_for_driver.csv', 'wb')
+    for title, count_tuple in selected_entries.items():
+        if (count_tuple[1] * 100) / count_tuple[0] < 5:
+            f.write("{}\t{}\t{}\n".format(title, count_tuple[0], count_tuple[
+                1]))
+    f.close()
+
+
 if __name__ == "__main__":
-    print_ngram_stats()
+    #     print_ngram_stats()
+    read_csv_and_create_ngrams()
     print "Done"
