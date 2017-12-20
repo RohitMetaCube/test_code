@@ -5,11 +5,11 @@
     You're not allowed to use any predefined random number generation function 
         nor use of any kind of third party library to generate random number.
 '''
-
+import time
 
 class RandomNumberGenerator:
     def __init__(self, bias_toward_higher_percent=73):
-        self.last_number = 0
+        self.last_number = time.time()
         self.random_multiplier = 4
         self.random_addition = 1
         self.random_min_limit = 0
