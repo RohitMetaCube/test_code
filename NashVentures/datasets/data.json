@@ -1,0 +1,920 @@
+{
+	"ref" : "020",
+	"href" : "http://nutritiondata.self.com/facts/cereal-grains-and-pasta/5676/2",
+	"categorie" : "Cereal Grains and Pasta",
+	"name" : "Amaranth, uncooked",
+	"the_good" : ": This food is low in Saturated Fat, and very low in Cholesterol and Sodium. It is also a good source of Iron, Magnesium and Phosphorus, and a very good source of Manganese.",
+	"data" : {
+		"100gm" : {
+			"calorie_info" : [
+				{
+					"sub_cat" : [
+						{
+							"From Carbohydrate" : {
+								"quantity" : 265.2084
+							}
+						},
+						{
+							"From Fat" : {
+								"quantity" : 58.76792
+							}
+						},
+						{
+							"From Protein" : {
+								"quantity" : 47.054115
+							}
+						},
+						{
+							"From Alcohol" : {
+								"quantity" : 0
+							}
+						}
+					],
+					"calories" : {
+						"DV" : 2000,
+						"quantity" : 371.00146
+					}
+				}
+			],
+			"vitamins" : [
+				{
+					"Vitamin A" : {
+						"DV" : 5000,
+						"unit" : "IU",
+						"quantity" : 1.9998937
+					},
+					"sub_cat" : [
+						{
+							"Retinol" : {
+								"unit" : "mcg",
+								"quantity" : 0
+							}
+						},
+						{
+							"Retinol Activity Equivalent" : {
+								"unit" : "mcg",
+								"quantity" : 0
+							}
+						},
+						{
+							"Alpha Carotene" : {
+								"unit" : "mcg",
+								"quantity" : 0
+							}
+						},
+						{
+							"Beta Carotene" : {
+								"unit" : "mcg",
+								"quantity" : 1.0000149
+							}
+						},
+						{
+							"Beta Cryptoxanthin" : {
+								"unit" : "mcg",
+								"quantity" : 0
+							}
+						},
+						{
+							"Lycopene" : {
+								"unit" : "mcg",
+								"quantity" : 0
+							}
+						},
+						{
+							"Lutein+Zeaxanthin" : {
+								"unit" : "mcg",
+								"quantity" : 27.999046
+							}
+						}
+					]
+				},
+				{
+					"Vitamin C" : {
+						"DV" : 60,
+						"unit" : "mg",
+						"quantity" : 4.199998
+					}
+				},
+				{
+					"Vitamin D" : {
+						"quantity" : 0
+					}
+				},
+				{
+					"Vitamin E (Alpha Tocopherol)" : {
+						"DV" : 20,
+						"unit" : "mg",
+						"quantity" : 1.1900101
+					},
+					"sub_cat" : [
+						{
+							"Beta Tocopherol" : {
+								"unit" : "mg",
+								"quantity" : 0.95999867
+							}
+						},
+						{
+							"Gamma Tocopherol" : {
+								"unit" : "mg",
+								"quantity" : 0.18997993
+							}
+						},
+						{
+							"Delta Tocopherol" : {
+								"unit" : "mg",
+								"quantity" : 0.6899491
+							}
+						}
+					]
+				},
+				{
+					"Vitamin K" : {
+						"DV" : 80,
+						"unit" : "mcg",
+						"quantity" : 0
+					}
+				},
+				{
+					"Thiamin" : {
+						"DV" : 1.5,
+						"unit" : "mg",
+						"quantity" : 0.11601325
+					}
+				},
+				{
+					"Riboflavin" : {
+						"DV" : 1.7,
+						"unit" : "mg",
+						"quantity" : 0.19998784
+					}
+				},
+				{
+					"Niacin" : {
+						"DV" : 20,
+						"unit" : "mg",
+						"quantity" : 0.9230651
+					}
+				},
+				{
+					"Vitamin B6" : {
+						"DV" : 2,
+						"unit" : "mg",
+						"quantity" : 0.5910274
+					}
+				},
+				{
+					"sub_cat" : [
+						{
+							"Food Folate" : {
+								"unit" : "mcg",
+								"quantity" : 82.00008
+							}
+						},
+						{
+							"Folic Acid" : {
+								"unit" : "mcg",
+								"quantity" : 0
+							}
+						},
+						{
+							"Dietary Folate Equivalents" : {
+								"unit" : "mcg",
+								"quantity" : 82.00008
+							}
+						}
+					],
+					"Folate" : {
+						"DV" : 400,
+						"unit" : "mcg",
+						"quantity" : 82.00008
+					}
+				},
+				{
+					"Vitamin B12" : {
+						"DV" : 6,
+						"unit" : "mcg",
+						"quantity" : 0
+					}
+				},
+				{
+					"Pantothenic Acid" : {
+						"DV" : 10,
+						"unit" : "mg",
+						"quantity" : 1.4571651
+					}
+				},
+				{
+					"Choline" : {
+						"unit" : "mg",
+						"quantity" : 69.810196
+					}
+				},
+				{
+					"Betaine" : {
+						"unit" : "mg",
+						"quantity" : 67.60326
+					}
+				}
+			],
+			"fats_and_fatty_acids" : [
+				{
+					"sub_cat" : [
+						{
+							"Saturated Fat" : {
+								"DV" : 20,
+								"unit" : "g",
+								"quantity" : 1.4590399
+							},
+							"sub_cat" : [
+								{
+									"4:00" : {
+										"quantity" : 0
+									}
+								},
+								{
+									"6:00" : {
+										"quantity" : 0
+									}
+								},
+								{
+									"8:00" : {
+										"unit" : "mg",
+										"quantity" : 0
+									}
+								},
+								{
+									"10:00" : {
+										"unit" : "mg",
+										"quantity" : 0
+									}
+								},
+								{
+									"12:00" : {
+										"unit" : "mg",
+										"quantity" : 0
+									}
+								},
+								{
+									"13:00" : {
+										"quantity" : 0
+									}
+								},
+								{
+									"14:00" : {
+										"unit" : "mg",
+										"quantity" : 11.000802
+									}
+								},
+								{
+									"15:00" : {
+										"unit" : "mg",
+										"quantity" : 0
+									}
+								},
+								{
+									"16:00" : {
+										"unit" : "mg",
+										"quantity" : 1154.1576
+									}
+								},
+								{
+									"17:00" : {
+										"unit" : "mg",
+										"quantity" : 0
+									}
+								},
+								{
+									"18:00" : {
+										"unit" : "mg",
+										"quantity" : 222.97264
+									}
+								},
+								{
+									"19:00" : {
+										"quantity" : 0
+									}
+								},
+								{
+									"20:00" : {
+										"unit" : "mg",
+										"quantity" : 51.997932
+									}
+								},
+								{
+									"22:00" : {
+										"unit" : "mg",
+										"quantity" : 18.00149
+									}
+								},
+								{
+									"24:00:00" : {
+										"quantity" : 0
+									}
+								}
+							]
+						},
+						{
+							"sub_cat" : [
+								{
+									"14:01" : {
+										"unit" : "mg",
+										"quantity" : 0
+									}
+								},
+								{
+									"15:01" : {
+										"unit" : "mg",
+										"quantity" : 0
+									}
+								},
+								{
+									"16:1 undifferentiated" : {
+										"unit" : "mg",
+										"quantity" : 0
+									}
+								},
+								{
+									"16:1 c" : {
+										"quantity" : 0
+									}
+								},
+								{
+									"16:1 t" : {
+										"quantity" : 0
+									}
+								},
+								{
+									"17:01" : {
+										"unit" : "mg",
+										"quantity" : 0
+									}
+								},
+								{
+									"18:1 undifferentiated" : {
+										"unit" : "mg",
+										"quantity" : 1671.0162
+									}
+								},
+								{
+									"18:1 c" : {
+										"quantity" : 0
+									}
+								},
+								{
+									"18:1 t" : {
+										"quantity" : 0
+									}
+								},
+								{
+									"20:01" : {
+										"unit" : "mg",
+										"quantity" : 13.997976
+									}
+								},
+								{
+									"22:1 undifferentiated" : {
+										"quantity" : 0
+									}
+								},
+								{
+									"22:1 c" : {
+										"quantity" : 0
+									}
+								},
+								{
+									"22:1 t" : {
+										"quantity" : 0
+									}
+								},
+								{
+									"24:1 c" : {
+										"quantity" : 0
+									}
+								}
+							],
+							"Monounsaturated Fat" : {
+								"unit" : "g",
+								"quantity" : 1.6850296
+							}
+						},
+						{
+							"sub_cat" : [
+								{
+									"16:2 undifferentiated" : {
+										"quantity" : 0
+									}
+								},
+								{
+									"18:2 undifferentiated" : {
+										"unit" : "mg",
+										"quantity" : 2736.0786
+									}
+								},
+								{
+									"18:2 n-6 c,c" : {
+										"quantity" : 0
+									}
+								},
+								{
+									"18:2 c,t" : {
+										"quantity" : 0
+									}
+								},
+								{
+									"18:2 t,c" : {
+										"quantity" : 0
+									}
+								},
+								{
+									"18:2 t,t" : {
+										"quantity" : 0
+									}
+								},
+								{
+									"18:2 i" : {
+										"quantity" : 0
+									}
+								},
+								{
+									"18:2 t not further defined" : {
+										"quantity" : 0
+									}
+								},
+								{
+									"18:03" : {
+										"unit" : "mg",
+										"quantity" : 41.996197
+									}
+								},
+								{
+									"18:3 n-3, c,c,c" : {
+										"unit" : "mg",
+										"quantity" : 41.996197
+									}
+								},
+								{
+									"18:3 n-6, c,c,c" : {
+										"unit" : "mg",
+										"quantity" : 0
+									}
+								},
+								{
+									"18:4 undifferentiated" : {
+										"quantity" : 0
+									}
+								},
+								{
+									"20:2 n-6 c,c" : {
+										"unit" : "mg",
+										"quantity" : 0
+									}
+								},
+								{
+									"20:3 undifferentiated" : {
+										"unit" : "mg",
+										"quantity" : 0
+									}
+								},
+								{
+									"20:3 n-3" : {
+										"quantity" : 0
+									}
+								},
+								{
+									"20:3 n-6" : {
+										"quantity" : 0
+									}
+								},
+								{
+									"20:4 undifferentiated" : {
+										"unit" : "mg",
+										"quantity" : 0
+									}
+								},
+								{
+									"20:4 n-3" : {
+										"quantity" : 0
+									}
+								},
+								{
+									"20:4 n-6" : {
+										"quantity" : 0
+									}
+								},
+								{
+									"20:5 n-3" : {
+										"quantity" : 0
+									}
+								},
+								{
+									"22:02" : {
+										"quantity" : 0
+									}
+								},
+								{
+									"22:5 n-3" : {
+										"quantity" : 0
+									}
+								},
+								{
+									"22:6 n-3" : {
+										"quantity" : 0
+									}
+								}
+							],
+							"Polyunsaturated Fat" : {
+								"unit" : "g",
+								"quantity" : 2.7783465
+							}
+						},
+						{
+							"Total trans fatty acids" : {
+								"quantity" : 0
+							}
+						},
+						{
+							"Total trans-monoenoic fatty acids" : {
+								"quantity" : 0
+							}
+						},
+						{
+							"Total trans-polyenoic fatty acids" : {
+								"quantity" : 0
+							}
+						},
+						{
+							"Total Omega-3 fatty acids" : {
+								"unit" : "mg",
+								"quantity" : 41.996197
+							}
+						},
+						{
+							"Total Omega-6 fatty acids" : {
+								"unit" : "mg",
+								"quantity" : 2736.0786
+							}
+						}
+					],
+					"Total Fat" : {
+						"DV" : 65,
+						"unit" : "g",
+						"quantity" : 7.020484
+					}
+				}
+			],
+			"carbohydrates" : [
+				{
+					"Total Carbohydrate" : {
+						"DV" : 300,
+						"unit" : "g",
+						"quantity" : 65.667725
+					},
+					"sub_cat" : [
+						{
+							"Dietary Fiber" : {
+								"DV" : 25,
+								"unit" : "g",
+								"quantity" : 6.700931
+							}
+						},
+						{
+							"Starch" : {
+								"unit" : "g",
+								"quantity" : 57.27688
+							}
+						},
+						{
+							"Sugars" : {
+								"unit" : "g",
+								"quantity" : 1.6899111
+							},
+							"sub_cat" : [
+								{
+									"Sucrose" : {
+										"unit" : "mg",
+										"quantity" : 1399.944
+									}
+								},
+								{
+									"Glucose" : {
+										"unit" : "mg",
+										"quantity" : 270.02243
+									}
+								},
+								{
+									"Fructose" : {
+										"unit" : "mg",
+										"quantity" : 9.999676
+									}
+								},
+								{
+									"Lactose" : {
+										"unit" : "mg",
+										"quantity" : 0
+									}
+								},
+								{
+									"Maltose" : {
+										"unit" : "mg",
+										"quantity" : 9.999676
+									}
+								},
+								{
+									"Galactose" : {
+										"unit" : "mg",
+										"quantity" : 0
+									}
+								}
+							]
+						}
+					]
+				}
+			],
+			"sterols" : [
+				{
+					"Cholesterol" : {
+						"DV" : 300,
+						"unit" : "mg",
+						"quantity" : 0
+					}
+				},
+				{
+					"sub_cat" : [
+						{
+							"Campesterol" : {
+								"quantity" : 0
+							}
+						},
+						{
+							"Stigmasterol" : {
+								"quantity" : 0
+							}
+						},
+						{
+							"Beta-sitosterol" : {
+								"quantity" : 0
+							}
+						}
+					],
+					"Phytosterols" : {
+						"unit" : "mg",
+						"quantity" : 23.998045
+					}
+				}
+			],
+			"protein_and_amino_acids" : [
+				{
+					"Protein" : {
+						"DV" : 50,
+						"unit" : "g",
+						"quantity" : 13.559784
+					},
+					"sub_cat" : [
+						{
+							"Tryptophan" : {
+								"unit" : "mg",
+								"quantity" : 181.01276
+							}
+						},
+						{
+							"Threonine" : {
+								"unit" : "mg",
+								"quantity" : 558.0758
+							}
+						},
+						{
+							"Isoleucine" : {
+								"unit" : "mg",
+								"quantity" : 582.0617
+							}
+						},
+						{
+							"Leucine" : {
+								"unit" : "mg",
+								"quantity" : 878.9426
+							}
+						},
+						{
+							"Lysine" : {
+								"unit" : "mg",
+								"quantity" : 747.0823
+							}
+						},
+						{
+							"Methionine" : {
+								"unit" : "mg",
+								"quantity" : 226.00134
+							}
+						},
+						{
+							"Cystine" : {
+								"unit" : "mg",
+								"quantity" : 190.9886
+							}
+						},
+						{
+							"Phenylalanine" : {
+								"unit" : "mg",
+								"quantity" : 541.9981
+							}
+						},
+						{
+							"Tyrosine" : {
+								"unit" : "mg",
+								"quantity" : 329.00217
+							}
+						},
+						{
+							"Valine" : {
+								"unit" : "mg",
+								"quantity" : 679.1003
+							}
+						},
+						{
+							"Arginine" : {
+								"unit" : "mg",
+								"quantity" : 1059.9733
+							}
+						},
+						{
+							"Histidine" : {
+								"unit" : "mg",
+								"quantity" : 388.94095
+							}
+						},
+						{
+							"Alanine" : {
+								"unit" : "mg",
+								"quantity" : 798.96185
+							}
+						},
+						{
+							"Aspartic acid" : {
+								"unit" : "mg",
+								"quantity" : 1261.159
+							}
+						},
+						{
+							"Glutamic acid" : {
+								"unit" : "mg",
+								"quantity" : 2259.3347
+							}
+						},
+						{
+							"Glycine" : {
+								"unit" : "mg",
+								"quantity" : 1635.9613
+							}
+						},
+						{
+							"Proline" : {
+								"unit" : "mg",
+								"quantity" : 697.8985
+							}
+						},
+						{
+							"Serine" : {
+								"unit" : "mg",
+								"quantity" : 1147.872
+							}
+						},
+						{
+							"Hydroxyproline" : {
+								"quantity" : 0
+							}
+						}
+					]
+				}
+			],
+			"other" : [
+				{
+					"Alcohol" : {
+						"unit" : "g",
+						"quantity" : 0
+					}
+				},
+				{
+					"Water" : {
+						"unit" : "g",
+						"quantity" : 11.290825
+					}
+				},
+				{
+					"Ash" : {
+						"unit" : "g",
+						"quantity" : 2.8801627
+					}
+				},
+				{
+					"Caffeine" : {
+						"quantity" : 0
+					}
+				},
+				{
+					"Theobromine" : {
+						"quantity" : 0
+					}
+				}
+			],
+			"minerals" : [
+				{
+					"Calcium" : {
+						"DV" : 1000,
+						"unit" : "mg",
+						"quantity" : 158.98158
+					}
+				},
+				{
+					"Iron" : {
+						"DV" : 18,
+						"unit" : "mg",
+						"quantity" : 7.610073
+					}
+				},
+				{
+					"Magnesium" : {
+						"DV" : 400,
+						"unit" : "mg",
+						"quantity" : 247.98738
+					}
+				},
+				{
+					"Phosphorus" : {
+						"DV" : 1000,
+						"unit" : "mg",
+						"quantity" : 557.00116
+					}
+				},
+				{
+					"Potassium" : {
+						"DV" : 3500,
+						"unit" : "mg",
+						"quantity" : 507.945
+					}
+				},
+				{
+					"Sodium" : {
+						"DV" : 2400,
+						"unit" : "mg",
+						"quantity" : 3.9998012
+					}
+				},
+				{
+					"Zinc" : {
+						"DV" : 15,
+						"unit" : "mg",
+						"quantity" : 2.87
+					}
+				},
+				{
+					"Copper" : {
+						"DV" : 2,
+						"unit" : "mg",
+						"quantity" : 0.5250198
+					}
+				},
+				{
+					"Manganese" : {
+						"DV" : 2,
+						"unit" : "mg",
+						"quantity" : 3.3325374
+					}
+				},
+				{
+					"Selenium" : {
+						"DV" : 70,
+						"unit" : "mcg",
+						"quantity" : 18.70299
+					}
+				},
+				{
+					"Fluoride" : {
+						"quantity" : 0
+					}
+				}
+			]
+		}
+	},
+	"caloric_ratio" : {
+		"Fats" : "16%",
+		"Carbs" : "71%",
+		"Protein" : "13%"
+	},
+	"serving_size" : [
+		{
+			"name" : "100 grams ",
+			"size" : "100.0"
+		},
+		{
+			"name" : "1 ounce  (28g)",
+			"size" : "28.0"
+		},
+		{
+			"name" : "1 cup  (193g)",
+			"size" : "193.0"
+		}
+	],
+	"the_bad" : "",
+	"flag_the_bad" : true,
+	"source" : "USDA SR-21"
+}
