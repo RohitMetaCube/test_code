@@ -90,12 +90,15 @@ def insert_header(employee_id=None,
         sheetIndex=sheetIndex)
 
 
-def insert_rows(sheetIndex=0, sheetName=None):
+def insert_rows(sheetIndex=0, sheetName=None, continue_day=None):
     sheetName = "Sheet{}".format(sheetIndex +
                                  1) if not sheetName else sheetName
     start_index = header_rows_count + 1
     end_index = start_index + per_day_rows_count * number_of_days - 1
     for day in range(1, number_of_days + 1):
+        if continue_day and day<continue_day:
+            start_index += per_day_rows_count
+            continue
         day_index = compute_day(day, month, year)
         row = [#'{}'.format(WEEK_DAYS[compute_day(day, month, year)]),
                '=IF((INDIRECT(ADDRESS(ROW(),COLUMN()+1,4))<>0), TEXT(INDIRECT(ADDRESS(ROW(),COLUMN()+1,4)), "dddd"), "")',
@@ -305,10 +308,10 @@ def add_projects_sheet(sheetIndex=0,
 
 if __name__ == "__main__":
     gsh = GoogleSheetHandler()
-    month = 12
-    year = 2017
+    month = 5
+    year = 2018
     spreadsheet_id = None#'1dlRe5bw24tFmsloUHgNqUcfakFPLXSiPz3U6LLD34eg'
-    sheets = [None, "Rohit", "Dhruv Sharma", "Piyush Beli"]
+    sheets = [None, "Rohit", "Piyush Beli"]
 
     number_of_days = compute_number_of_days(month, year)
     day = compute_day(1, month, year)
@@ -333,7 +336,7 @@ if __name__ == "__main__":
                 end_row_index=end_index,
                 sheetIndex=sheet_index)
             insert_header(sheetIndex=sheet_index, sheetName=sheet_name)
-            insert_rows(sheetIndex=sheet_index, sheetName=sheet_name)
+            insert_rows(sheetIndex=sheet_index, sheetName=sheet_name,  continue_day=None)
 
     sheet_index += 1
     gsh.add_sheet(spreadsheetId=spreadsheet_id, sheetIndex=sheet_index, sheetName="Projects")
