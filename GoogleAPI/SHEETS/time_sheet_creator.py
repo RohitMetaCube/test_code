@@ -1,5 +1,8 @@
 from google_sheet_handler import GoogleSheetHandler
 import math
+import time
+import googleapiclient
+import json
 
 WEEK_DAYS = [
     'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday',
@@ -95,62 +98,79 @@ def insert_rows(sheetIndex=0, sheetName=None, continue_day=None):
                                  1) if not sheetName else sheetName
     start_index = header_rows_count + 1
     end_index = start_index + per_day_rows_count * number_of_days - 1
-    for day in range(1, number_of_days + 1):
-        if continue_day and day<continue_day:
+    try:
+        for day in range(1, number_of_days + 1):
+            if continue_day and day < continue_day:
+                start_index += per_day_rows_count
+                continue
+            day_index = compute_day(day, month, year)
+            row = [#'{}'.format(WEEK_DAYS[compute_day(day, month, year)]),
+                   '=IF((INDIRECT(ADDRESS(ROW(),COLUMN()+1,4))<>0), TEXT(INDIRECT(ADDRESS(ROW(),COLUMN()+1,4)), "dddd"), "")',
+                   '{}/{}/{}'.format(month, day, year),
+                   "", "", "", "=SUM(E{}:E{})".format(start_index, start_index+per_day_rows_count-1)]
+            data_list = [["", "", "", "", "", ""]
+                         if i + 1 < per_day_rows_count else row
+                         for i in range(per_day_rows_count)]
+            range_text = "{}!A{}:F{}".format(
+                sheetName, start_index, start_index + per_day_rows_count - 1)
+            gsh.update_data_in_sheet(
+                spreadsheet_id=spreadsheet_id,
+                range_=range_text,
+                data_list=data_list)
+            gsh.merge_cells(
+                spreadsheetId=spreadsheet_id,
+                start_row_index=start_index - 1,
+                end_row_index=start_index + per_day_rows_count - 1,
+                start_col_index=0,
+                end_col_index=2,
+                sheetIndex=sheetIndex)
+            gsh.merge_cells(
+                spreadsheetId=spreadsheet_id,
+                start_row_index=start_index - 1,
+                end_row_index=start_index + per_day_rows_count - 1,
+                start_col_index=5,
+                end_col_index=6,
+                sheetIndex=sheetIndex)
+            if day_index in set([5, 6]):
+                gsh.mark_headers(
+                    spreadsheetId=spreadsheet_id,
+                    start_row_index=start_index - 1,
+                    end_row_index=start_index + per_day_rows_count - 1,
+                    red_bg_color=204,
+                    green_bg_color=255,
+                    blue_bg_color=204,
+                    bold=False,
+                    sheetIndex=sheetIndex)
             start_index += per_day_rows_count
-            continue
-        day_index = compute_day(day, month, year)
-        row = [#'{}'.format(WEEK_DAYS[compute_day(day, month, year)]),
-               '=IF((INDIRECT(ADDRESS(ROW(),COLUMN()+1,4))<>0), TEXT(INDIRECT(ADDRESS(ROW(),COLUMN()+1,4)), "dddd"), "")',
-               '{}/{}/{}'.format(month, day, year),
-               "", "", "", "=SUM(E{}:E{})".format(start_index, start_index+per_day_rows_count-1)]
-        data_list = [["", "", "", "", "", ""]
-                     if i + 1 < per_day_rows_count else row
-                     for i in range(per_day_rows_count)]
-        range_text = "{}!A{}:F{}".format(sheetName, start_index,
-                                         start_index + per_day_rows_count - 1)
+
+        data_list = [[
+            "", "", "", "Total Hours", "",
+            "=SUM(F{}:F{})".format(header_rows_count + 1, end_index)
+        ]]
+        range_text = "{}!A{}:F{}".format(sheetName, start_index, start_index)
         gsh.update_data_in_sheet(
             spreadsheet_id=spreadsheet_id,
             range_=range_text,
             data_list=data_list)
-        gsh.merge_cells(
+        gsh.mark_headers(
             spreadsheetId=spreadsheet_id,
-            start_row_index=start_index - 1,
-            end_row_index=start_index + per_day_rows_count - 1,
-            start_col_index=0,
-            end_col_index=2,
+            start_row_index=end_index,
+            end_row_index=end_index + 1,
             sheetIndex=sheetIndex)
-        gsh.merge_cells(
-            spreadsheetId=spreadsheet_id,
-            start_row_index=start_index - 1,
-            end_row_index=start_index + per_day_rows_count - 1,
-            start_col_index=5,
-            end_col_index=6,
-            sheetIndex=sheetIndex)
-        if day_index in set([5, 6]):
-            gsh.mark_headers(
-                spreadsheetId=spreadsheet_id,
-                start_row_index=start_index - 1,
-                end_row_index=start_index + per_day_rows_count - 1,
-                red_bg_color=204,
-                green_bg_color=255,
-                blue_bg_color=204,
-                bold=False,
-                sheetIndex=sheetIndex)
-        start_index += per_day_rows_count
-
-    data_list = [[
-        "", "", "", "Total Hours", "",
-        "=SUM(F{}:F{})".format(header_rows_count + 1, end_index)
-    ]]
-    range_text = "{}!A{}:F{}".format(sheetName, start_index, start_index)
-    gsh.update_data_in_sheet(
-        spreadsheet_id=spreadsheet_id, range_=range_text, data_list=data_list)
-    gsh.mark_headers(
-        spreadsheetId=spreadsheet_id,
-        start_row_index=end_index,
-        end_row_index=end_index + 1,
-        sheetIndex=sheetIndex)
+    except googleapiclient.errors.HttpError as e:
+        print e
+        try:
+            data = json.loads(e.content.decode('utf-8'))
+            if data['error']['code'] == 429:
+                time.sleep(60)
+                insert_rows(
+                    sheetIndex=sheetIndex,
+                    sheetName=sheetName,
+                    continue_day=day)
+            else:
+                raise Exception(e)
+        except Exception as e:
+            raise Exception(e)
 
 
 def add_weekly_sheet(sheetIndex=0, sheetName=None, users=[]):
@@ -310,8 +330,9 @@ if __name__ == "__main__":
     gsh = GoogleSheetHandler()
     month = 8
     year = 2018
-    spreadsheet_id = None#'1dlRe5bw24tFmsloUHgNqUcfakFPLXSiPz3U6LLD34eg'
+    spreadsheet_id = None  #'1dlRe5bw24tFmsloUHgNqUcfakFPLXSiPz3U6LLD34eg'
     sheets = [None, "Rohit", "Piyush Beli"]
+    #sheets = [None, "Dhruv Sharma"]
 
     number_of_days = compute_number_of_days(month, year)
     day = compute_day(1, month, year)
@@ -322,37 +343,139 @@ if __name__ == "__main__":
     end_index = header_rows_count + 1 + per_day_rows_count * number_of_days
 
     if not spreadsheet_id:
-        spreadsheet_id = gsh.create_google_sheet()["spreadsheetId"]
+        while True:
+            print "Creating a new spreadsheet...."
+            try:
+                spreadsheet_id = gsh.create_google_sheet()["spreadsheetId"]
+                break
+            except googleapiclient.errors.HttpError as e:
+                print e
+                try:
+                    data = json.loads(e.content.decode('utf-8'))
+                    if data['error']['code'] == 429:
+                        time.sleep(60)
+                        continue
+                    else:
+                        break
+                except Exception as ee:
+                    break
+            except Exception as e:
+                print e
+                break
 
     for sheet_index, sheet_name in enumerate(sheets):
         if sheet_index:
-            gsh.add_sheet(
-                spreadsheetId=spreadsheet_id,
-                sheetIndex=sheet_index,
-                sheetName=sheet_name)
+            while True:
+                print "Adding First Sheet.."
+                try:
+                    gsh.add_sheet(
+                        spreadsheetId=spreadsheet_id,
+                        sheetIndex=sheet_index,
+                        sheetName=sheet_name)
+                    break
+                except googleapiclient.errors.HttpError as e:
+                    print e
+                    data = json.loads(e.content.decode('utf-8'))
+                    if data['error']['code'] == 429:
+                        time.sleep(60)
+                        continue
         else:
-            gsh.create_border(
-                spreadsheetId=spreadsheet_id,
-                end_row_index=end_index,
-                sheetIndex=sheet_index)
-            insert_header(sheetIndex=sheet_index, sheetName=sheet_name)
-            insert_rows(sheetIndex=sheet_index, sheetName=sheet_name,  continue_day=None)
+            while True:
+                print "Creating Border in First Sheet"
+                try:
+                    gsh.create_border(
+                        spreadsheetId=spreadsheet_id,
+                        end_row_index=end_index,
+                        sheetIndex=sheet_index)
+                    break
+                except googleapiclient.errors.HttpError as e:
+                    print e
+                    data = json.loads(e.content.decode('utf-8'))
+                    if data['error']['code'] == 429:
+                        time.sleep(60)
+                        continue
+            while True:
+                print "Adding headers in First Sheet.."
+                try:
+                    insert_header(sheetIndex=sheet_index, sheetName=sheet_name)
+                    break
+                except googleapiclient.errors.HttpError as e:
+                    print e
+                    data = json.loads(e.content.decode('utf-8'))
+                    if data['error']['code'] == 429:
+                        time.sleep(60)
+                        continue
+            insert_rows(
+                sheetIndex=sheet_index,
+                sheetName=sheet_name,
+                continue_day=None)
 
     sheet_index += 1
-    gsh.add_sheet(spreadsheetId=spreadsheet_id, sheetIndex=sheet_index, sheetName="Projects")
-    add_projects_sheet(sheet_index, "Projects")
+    SHEET, DATA = True, True
+    while SHEET or DATA:
+        print "Adding Projects Sheet"
+        try:
+            if SHEET:
+                gsh.add_sheet(
+                    spreadsheetId=spreadsheet_id,
+                    sheetIndex=sheet_index,
+                    sheetName="Projects")
+                SHEET = False
+            if not SHEET and DATA:
+                add_projects_sheet(sheet_index, "Projects")
+                DATA = False
+        except googleapiclient.errors.HttpError as e:
+            print e
+            data = json.loads(e.content.decode('utf-8'))
+            if data['error']['code'] == 429:
+                time.sleep(60)
+                continue
 
     sheet_index += 1
-    gsh.add_sheet(spreadsheetId=spreadsheet_id, sheetIndex=sheet_index, sheetName="Weekly")
-    add_weekly_sheet(sheet_index, "Weekly", sheets[1:])
+    SHEET, DATA = True, True
+    while SHEET or DATA:
+        print "Adding Weekly Sheet"
+        try:
+            if SHEET:
+                gsh.add_sheet(
+                    spreadsheetId=spreadsheet_id,
+                    sheetIndex=sheet_index,
+                    sheetName="Weekly")
+                SHEET = False
+            if not SHEET and DATA:
+                add_weekly_sheet(sheet_index, "Weekly", sheets[1:])
+                DATA = False
+        except googleapiclient.errors.HttpError as e:
+            print e
+            data = json.loads(e.content.decode('utf-8'))
+            if data['error']['code'] == 429:
+                time.sleep(60)
+                continue
 
     sheet_index += 1
-    gsh.add_sheet(
-        spreadsheetId=spreadsheet_id,
-        sheetIndex=sheet_index,
-        sheetName="Sprint - Hrs")
-    add_sprint_hrs_sheet(
-        sheet_index, "Sprint - Hrs", sheets[1:], end_index=end_index)
+    SHEET, DATA = True, True
+    while SHEET or DATA:
+        print "Adding Sprint - Hrs Sheet"
+        try:
+            if SHEET:
+                gsh.add_sheet(
+                    spreadsheetId=spreadsheet_id,
+                    sheetIndex=sheet_index,
+                    sheetName="Sprint - Hrs")
+                SHEET = False
+            if not SHEET and DATA:
+                add_sprint_hrs_sheet(
+                    sheet_index,
+                    "Sprint - Hrs",
+                    sheets[1:],
+                    end_index=end_index)
+                DATA = False
+        except googleapiclient.errors.HttpError as e:
+            print e
+            data = json.loads(e.content.decode('utf-8'))
+            if data['error']['code'] == 429:
+                time.sleep(60)
+                continue
 
     # month_years = [(11,2017), (6,1987), (2, 2016), (2, 2000), (2, 1900), (7, 2017), (8, 2017), (1, 2017), (12, 2017)]
     # for month, year in month_years:
