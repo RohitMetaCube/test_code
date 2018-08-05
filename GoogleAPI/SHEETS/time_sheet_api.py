@@ -416,12 +416,13 @@ class TimeSheetAPI:
         for sheet_index, sheet_name in enumerate(sheets):
             if sheet_index:
                 while True:
-                    print "Adding First Sheet.."
+                    print "Adding {} Sheet..".format(sheet_name)
                     try:
-                        self.gsh.add_sheet(
+                        self.gsh.duplicate_sheet(
                             spreadsheetId=spreadsheet_id,
                             sheetIndex=sheet_index,
-                            sheetName=sheet_name)
+                            newSheetId=sheet_index,
+                            newSheetName=sheet_name)
                         break
                     except googleapiclient.errors.HttpError as e:
                         print e
@@ -490,6 +491,21 @@ class TimeSheetAPI:
                 if data['error']['code'] == 429:
                     time.sleep(60)
                     continue
+        i = 0
+        while i < len(sheets):
+            print "Adding Data Validations"
+            try:
+                self.gsh.setDataValidation(
+                    spreadsheetId=spreadsheet_id,
+                    sheetId=i,
+                    endRowIndex=end_index - 1)
+                i += 1
+            except googleapiclient.errors.HttpError as e:
+                print e
+                data = json.loads(e.content.decode('utf-8'))
+                if data['error']['code'] == 429:
+                    time.sleep(60)
+                    continue
 
         sheet_index += 1
         SHEET, DATA = True, True
@@ -509,6 +525,21 @@ class TimeSheetAPI:
                         sheets[1:],
                         spreadsheet_id=spreadsheet_id)
                     DATA = False
+            except googleapiclient.errors.HttpError as e:
+                print e
+                data = json.loads(e.content.decode('utf-8'))
+                if data['error']['code'] == 429:
+                    time.sleep(60)
+                    continue
+
+        while True:
+            print "Adding Weekly Column Chart in Sheet"
+            try:
+                self.gsh.add_column_chart(
+                    spreadsheetId=spreadsheet_id,
+                    sheetId=sheet_index + 1,
+                    usersCount=len(sheets) - 1)
+                break
             except googleapiclient.errors.HttpError as e:
                 print e
                 data = json.loads(e.content.decode('utf-8'))
@@ -541,6 +572,22 @@ class TimeSheetAPI:
                 if data['error']['code'] == 429:
                     time.sleep(60)
                     continue
+
+        while True:
+            print "Adding Sprint Bar Chart in Sheet"
+            try:
+                self.gsh.add_bar_chart(
+                    spreadsheetId=spreadsheet_id,
+                    sheetId=sheet_index + 1,
+                    usersCount=len(sheets) - 1)
+                break
+            except googleapiclient.errors.HttpError as e:
+                print e
+                data = json.loads(e.content.decode('utf-8'))
+                if data['error']['code'] == 429:
+                    time.sleep(60)
+                    continue
+
         return spreadsheet_id
 
     @cherrypy.expose

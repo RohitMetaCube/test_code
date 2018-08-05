@@ -326,6 +326,189 @@ class GoogleSheetHandler():
                 print(row)
         return values
 
+    def duplicate_sheet(self,
+                        spreadsheetId=None,
+                        sourceSheetId=0,
+                        sheetIndex=1,
+                        newSheetId=None,
+                        newSheetName=''):
+        requests = []
+        request = {
+            "duplicateSheet": {
+                "sourceSheetId": sourceSheetId,
+                "insertSheetIndex": sheetIndex,
+                "newSheetId": newSheetId,
+                "newSheetName": newSheetName
+            }
+        }
+        requests.append(request)
+
+        body = {'requests': requests}
+        response = self.service.spreadsheets().batchUpdate(
+            spreadsheetId=spreadsheetId, body=body).execute()
+        print(response)
+
+    def add_column_chart(self,
+                         spreadsheetId,
+                         chartId=None,
+                         sheetId=0,
+                         usersCount=2):
+        requests = []
+        request = {
+            "addChart": {
+                "chart": {
+                    "chartId": chartId,
+                    "spec": {
+                        # Union field chart can be only one of the following:
+                        "basicChart": {
+                            "chartType": "COLUMN",  # A column Chart
+                            "legendPosition": "RIGHT_LEGEND",
+                            "axis": [{
+                                "position": "BOTTOM_AXIS"
+                            }],
+                            "series": [{
+                                "series": {
+                                    "sourceRange": {
+                                        "sources": [{
+                                            "sheetId": sheetId,
+                                            "startRowIndex": 0,
+                                            "endRowIndex": 6,
+                                            "startColumnIndex": i,
+                                            "endColumnIndex": i + 1
+                                        }]
+                                    }
+                                },
+                                "type": "COLUMN"
+                            } for i in range(usersCount + 1)],
+                            "headerCount": 1,
+                            "threeDimensional": False,
+                            "interpolateNulls": False,
+                            "stackedType": "NOT_STACKED",
+                            "lineSmoothing": False,
+                            "compareMode":
+                            "BASIC_CHART_COMPARE_MODE_UNSPECIFIED"
+                        },
+                        # End of list of possible types for union field chart.
+                    },
+                    "position": {
+                        "overlayPosition": {
+                            "anchorCell": {
+                                "sheetId": sheetId,
+                                "rowIndex": 9,
+                                "columnIndex": 1
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        requests.append(request)
+        body = {'requests': requests}
+        response = self.service.spreadsheets().batchUpdate(
+            spreadsheetId=spreadsheetId, body=body).execute()
+        print(response)
+
+    def add_bar_chart(self,
+                      spreadsheetId,
+                      chartId=None,
+                      sheetId=0,
+                      usersCount=2):
+        requests = []
+        request = {
+            "addChart": {
+                "chart": {
+                    "chartId": chartId,
+                    "spec": {
+                        # Union field chart can be only one of the following:
+                        "basicChart": {
+                            "chartType": "BAR",  # A bar Chart
+                            "legendPosition": "RIGHT_LEGEND",
+                            "domains": [{
+                                "domain": {
+                                    "sourceRange": {
+                                        "sources": [{
+                                            "sheetId": sheetId,
+                                            "startRowIndex": 0,
+                                            "endRowIndex": 9,
+                                            "startColumnIndex": 0,
+                                            "endColumnIndex": 1
+                                        }]
+                                    }
+                                },
+                                "reversed": False
+                            }],
+                            "series": [{
+                                "series": {
+                                    "sourceRange": {
+                                        "sources": [{
+                                            "sheetId": sheetId,
+                                            "startRowIndex": 0,
+                                            "endRowIndex": 9,
+                                            "startColumnIndex": i,
+                                            "endColumnIndex": i + 1
+                                        }]
+                                    }
+                                }
+                            } for i in range(1, usersCount + 1)],
+                            "headerCount": 1,
+                            "threeDimensional": False,
+                            "interpolateNulls": False,
+                            "stackedType": "STACKED",
+                            "lineSmoothing": False,
+                            "compareMode":
+                            "BASIC_CHART_COMPARE_MODE_UNSPECIFIED"
+                        },
+                        # End of list of possible types for union field chart.
+                    },
+                    "position": {
+                        "overlayPosition": {
+                            "anchorCell": {
+                                "sheetId": sheetId,
+                                "rowIndex": 11,
+                                "columnIndex": 1
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        requests.append(request)
+        body = {'requests': requests}
+        response = self.service.spreadsheets().batchUpdate(
+            spreadsheetId=spreadsheetId, body=body).execute()
+        print(response)
+
+    def setDataValidation(self, spreadsheetId=None, sheetId=0,
+                          endRowIndex=129):
+        requests = []
+        request = {
+            "setDataValidation": {
+                "range": {
+                    "sheetId": sheetId,
+                    "startRowIndex": 5,
+                    "endRowIndex": endRowIndex,
+                    "startColumnIndex": 2,
+                    "endColumnIndex": 3
+                },
+                "rule": {
+                    "condition": {
+                        "type": "ONE_OF_RANGE",
+                        "values": [{
+                            "userEnteredValue": "=Projects!A1:A5"
+                        }]
+                    },
+                    "inputMessage": "Choose one from Drop-down",
+                    "strict": True,
+                    'showCustomUi': True
+                }
+            }
+        }
+        requests.append(request)
+        body = {'requests': requests}
+        response = self.service.spreadsheets().batchUpdate(
+            spreadsheetId=spreadsheetId, body=body).execute()
+        print(response)
+
 
 if __name__ == '__main__':
     gsh = GoogleSheetHandler()
