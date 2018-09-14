@@ -2,6 +2,7 @@ import re
 import logging
 import traceback
 
+
 class OneLineExceptionFormatter(logging.Formatter):
     def formatException(self, exc_info):
         tb = re.sub("\n", "\t", traceback.format_exc(exc_info[2]))

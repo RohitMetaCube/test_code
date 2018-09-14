@@ -387,7 +387,7 @@ class TimeSheetAPI:
     def sheet_processor(self, month, year, sheets, spreadsheet_id=None):
         number_of_days = self.compute_number_of_days(month, year)
         day = self.compute_day(1, month, year)
-        number_of_days_in_week_1 = (7 - day) if day < 5 else 7
+        number_of_days_in_week_1 = (7 - day)  #if day < 5 else 7
         number_of_days_in_week_5 = number_of_days - 21 - number_of_days_in_week_1
         end_index = self.HEADER_ROWS_COUNT + 1 + self.PER_DAY_ROWS_COUNT * number_of_days
 
