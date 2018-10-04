@@ -18,7 +18,7 @@
 
 <b>URL:</b> http://localhost:8080/timeSheet/mark_entry
 <br>
-<b>Request 1 <LEAVE>:</b><br>
+<b>Request 1 (LEAVE):</b><br>
 <i>{
   "markingSheetIndex":1,
   "markingType":"leave",
@@ -26,7 +26,7 @@
   "spreadsheetID":"1_dG5DgaPM0VTZCQedo9EyjJFUpSQwGuoBBHr19C62XA"
 }</i><br><br>
 
-<b>Request 2 <HOLIDAY>:</b><br>
+<b>Request 2 (HOLIDAY):</b><br>
 <i>{
   "markingSheetIndex":1,
   "markingType":"holiday",
@@ -34,7 +34,7 @@
   "spreadsheetID":"1_dG5DgaPM0VTZCQedo9EyjJFUpSQwGuoBBHr19C62XA"
 }</i><br><br>
 
-<b>Request 3 <WORKING>:</b><br>
+<b>Request 3 (WORKING):</b><br>
 <i>{
   "markingSheetIndex":1,
   "markingType":"working",
