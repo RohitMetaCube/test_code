@@ -439,7 +439,7 @@ class TimeSheetAPI:
         sheet_index += 1
         print "Adding Projects Sheet"
         requests = self.gsh.add_sheet(
-            sheetIndex=sheet_index, sheetName="Projects")
+            sheetIndex=sheet_index, sheetName="Projects", requests=[])
         status, response = self.gsh.process_batch_requests(
             spreadsheetId=spreadsheet_id, requests=requests)
         if status:
@@ -456,10 +456,10 @@ class TimeSheetAPI:
         self.gsh.process_batch_requests(
             spreadsheetId=spreadsheet_id, requests=requests)
 
-        sheet_index += 5
-        print "Adding Weekly Sheet"
+        sheet_index += 1
+        print "Adding Weekly Sheet at sheetIndex: {}".format(sheet_index)
         requests = self.gsh.add_sheet(
-            sheetIndex=sheet_index, sheetName="Weekly")
+            sheetIndex=sheet_index, sheetName="Weekly", requests=[])
         status, response = self.gsh.process_batch_requests(
             spreadsheetId=spreadsheet_id, requests=requests)
         if status:
@@ -471,7 +471,7 @@ class TimeSheetAPI:
 
             print "Adding Weekly Column Chart in Sheet"
             requests = self.gsh.add_column_chart(
-                sheetId=sheet_index + 1,
+                sheetId=sheet_index,
                 usersCount=len(sheets) - 1,
                 requests=requests)
 
@@ -479,9 +479,9 @@ class TimeSheetAPI:
                 spreadsheetId=spreadsheet_id, requests=requests)
 
         sheet_index += 1
-        print "Adding Sprint - Hrs Sheet"
+        print "Adding Sprint - Hrs Sheet at sheetIndex: {}".format(sheet_index)
         requests = self.gsh.add_sheet(
-            sheetIndex=sheet_index, sheetName="Sprint - Hrs")
+            sheetIndex=sheet_index, sheetName="Sprint - Hrs", requests=[])
         status, response = self.gsh.process_batch_requests(
             spreadsheetId=spreadsheet_id, requests=requests)
         if status:
@@ -494,8 +494,7 @@ class TimeSheetAPI:
 
             print "Adding Sprint Bar Chart in Sheet"
             requests = self.gsh.add_bar_chart(
-                spreadsheetId=spreadsheet_id,
-                sheetId=sheet_index + 1,
+                sheetId=sheet_index,
                 usersCount=len(sheets) - 1,
                 requests=requests)
 

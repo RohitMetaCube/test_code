@@ -244,7 +244,7 @@ class GoogleSheetHandler():
         request = {
             "updateBorders": {
                 "range": {
-                    "sheetId": sheetIndex + 1 if sheetIndex else sheetIndex,
+                    "sheetId": sheetIndex if sheetIndex else sheetIndex,
                     "startRowIndex": start_row_index,
                     "endRowIndex": end_row_index,
                     "startColumnIndex": start_col_index,
@@ -430,7 +430,6 @@ class GoogleSheetHandler():
         return requests
 
     def add_column_chart(self,
-                         spreadsheetId,
                          chartId=None,
                          sheetId=0,
                          usersCount=2,
@@ -486,11 +485,7 @@ class GoogleSheetHandler():
         requests.append(request)
         return requests
 
-    def add_bar_chart(self,
-                      spreadsheetId,
-                      chartId=None,
-                      sheetId=0,
-                      usersCount=2,
+    def add_bar_chart(self, chartId=None, sheetId=0, usersCount=2,
                       requests=[]):
         request = {
             "addChart": {
