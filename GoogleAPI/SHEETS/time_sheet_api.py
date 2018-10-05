@@ -406,7 +406,10 @@ class TimeSheetAPI:
 
         if not spreadsheet_id:
             print "Creating a new spreadsheet...."
-            create_response = self.gsh.create_google_sheet()
+            create_response = self.gsh.create_google_sheet(
+                projectName=project_name,
+                month=self.MONTHS[month - 1],
+                year=year)
             if create_response:
                 spreadsheet_id = create_response["spreadsheetId"]
             else:
@@ -567,10 +570,12 @@ class TimeSheetAPI:
                         user[TimeSheetAPI.USERNAME_PARAMETER])
                 ]])
             ''' Share Sheet with User '''
-            if TimeSheetAPI.USER_EMAIL_PARAMETER in user:
-                user[TimeSheetAPI.USER_EMAIL_PARAMETER]
-            ''' Mark Leaves '''
-            ''' Mark Special Working Days '''
+            self.gsh.share_google_spreadsheet(
+                share_emails=[
+                    user[TimeSheetAPI.USER_EMAIL_PARAMETER] for user in users
+                    if TimeSheetAPI.USER_EMAIL_PARAMETER in user
+                ],
+                spreadsheetId=spreadsheet_id)
 
     @cherrypy.expose
     @cherrypy.tools.json_out()
@@ -650,7 +655,6 @@ class TimeSheetAPI:
                 upsert=True,
                 multi=False)
             self.update_user_details(users, spreadsheet_id)
-
         else:
             response_object = {error_message: error_message}
         return response_object

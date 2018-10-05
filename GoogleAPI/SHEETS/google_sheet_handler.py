@@ -51,6 +51,8 @@ class GoogleSheetHandler():
                         'version=v4')
         self.service = discovery.build(
             'sheets', 'v4', http=http, discoveryServiceUrl=discoveryUrl)
+        self.drive_service = discovery.build(
+            'drive', 'v3', credentials=credentials)
 
     def get_credentials(self):
         """Gets valid user credentials from storage.
@@ -91,9 +93,31 @@ class GoogleSheetHandler():
         root.setLevel(logging.INFO)
         root.addHandler(logging_handler)
 
-    def create_google_sheet(self):
+    def share_google_spreadsheet(self, share_emails=[], spreadsheetId=None):
+        if share_emails:
+            for emailAddr in share_emails:
+                # https://developers.google.com/drive/v3/web/manage-sharing#roles
+                # https://developers.google.com/drive/v3/reference/permissions#resource-representations
+                domain_permission = {
+                    'type': 'user',
+                    'role': 'writer',
+                    'emailAddress': emailAddr
+                }
+
+                req = self.drive_service.permissions().create(
+                    fileId=spreadsheetId,
+                    sendNotificationEmail=True,
+                    emailMessage="This is a Auto-Generated Mail of file sharing",
+                    body=domain_permission)
+                req.execute()
+
+    def create_google_sheet(self, projectName=None, month=None, year=None):
         response = None
-        spreadsheet_body = {}
+        spreadsheet_body = {
+            "properties": {
+                "title": "{} {} {} Timesheet".format(projectName, month, year)
+            }
+        }
         while True:
             logging.info(
                 "googleSheetHandler.CreateGoogleSheet ::: Creating a new spreadsheet...."
@@ -118,6 +142,23 @@ class GoogleSheetHandler():
                 break
         logging.info(response)
         return response
+
+    def rename_spreadsheet(self,
+                           spreadsheetName=None,
+                           projectName=None,
+                           month=None,
+                           year=None,
+                           requests=[]):
+        request = {
+            "UpdateSpreadsheetPropertiesRequest": {
+                "properties": {
+                    "title": spreadsheetName if spreadsheetName else
+                    "{} {} {} Timesheet".format(projectName, month, year),
+                }
+            }
+        }
+        requests.append(request)
+        return requests
 
     def get_all_existing_sheet_indexes(self, spreadsheetId=None):
         sheet_metadata = self.service.spreadsheets().get(
