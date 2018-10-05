@@ -64,3 +64,55 @@
   "Message": {"spreadsheetId": "1_dG5DgaPM0VTZCQedo9EyjJFUpSQwGuoBBHr19C62XA", "replies": [{}]}, 
   "status": true
 }</i><br><br>
+
+
+
+<h3>Some Sample Requests for Leave with Distinct Parameters</h3>
+<br><br>
+<b>If Current Month</b><br>
+<i>{
+  "adminEmailAddr": "rohitkumar1800@gmail.com",
+  "markingType":"leave",
+  "markingDates":[5,6],
+  "markingSheetName":"Rohit Kumar",
+}</i><br><br>
+
+
+<b>If Specified Month</b><br>
+<i>{
+  "month":11,
+  "adminEmailAddr": "rohitkumar1800@gmail.com",
+  "markingType":"leave",
+  "markingDates":[5,6],
+  "markingSheetName":"Rohit Kumar",
+}</i><br><br>
+
+<b>If An Admin have multiple project sheets then project name is mendatory to fetch exact spreadsheetID</b><br>
+<i>{
+  "adminEmailAddr": "rohitkumar1800@gmail.com",
+  "projectName":"Zippia"
+  "markingType":"leave",
+  "markingDates":[5,6],
+  "markingSheetName":"Rohit Kumar",
+}</i><br><br>
+
+<b>If Know SpreadsheetID</b><br>
+<i>{
+  "spreadsheetID": "1kZ0DMsmCQnZ6n3Y4_BnFtPLk4klvv94dLaImlc690Lo",
+  "markingType":"leave",
+  "markingDates":[5,6],
+  "markingSheetName":"Rohit Kumar",
+}</i><br><br>
+
+
+<b>If Know sheetIndex</b><br>
+<i>{
+  "spreadsheetID": "1kZ0DMsmCQnZ6n3Y4_BnFtPLk4klvv94dLaImlc690Lo",
+  "markingType":"leave",
+  "markingDates":[5,6],
+  "markingSheetIndex":1,
+}</i>
+
+
+
+

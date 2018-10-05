@@ -54,6 +54,11 @@ class TimeSheetAPI:
         self.holiday_hex = "CCFFCC"
         self.workday_hex = "FFFFFF"
 
+        self.common_project_fields = [
+            "Client communication", "Documentation", "R&D", "Team meeting"
+        ]
+        self.default_project_name = "ProjectName"
+
         # Initialize MongoDB instance
         self.mongodb = mongoDB()
 
@@ -374,10 +379,7 @@ class TimeSheetAPI:
     def add_projects_sheet(self,
                            sheetIndex=0,
                            sheetName=None,
-                           projects=[
-                               "Client communication", "Documentation", "R&D",
-                               "Team meeting", "Zippia"
-                           ],
+                           projects=[],
                            spreadsheet_id=None):
         sheetName = "Sheet{}".format(sheetIndex +
                                      1) if not sheetName else sheetName
@@ -392,7 +394,12 @@ class TimeSheetAPI:
             range_=range_text,
             data_list=data_list)
 
-    def sheet_processor(self, month, year, sheets, spreadsheet_id=None):
+    def sheet_processor(self,
+                        month,
+                        year,
+                        sheets,
+                        project_name=None,
+                        spreadsheet_id=None):
         number_of_days = self.compute_number_of_days(month, year)
         day = self.compute_day(1, month, year)
         number_of_days_in_week_1 = (7 - day)  #if day < 5 else 7
@@ -453,6 +460,12 @@ class TimeSheetAPI:
                     alignment=Format.LEFT.value,
                     wrap=Format.WRAP.value,
                     requests=requests)
+                requests = self.gsh.data_alignment(
+                    sheetIndex=sheet_index,
+                    end_col_index=1,
+                    alignment=Format.CENTER.value,
+                    wrap=Format.WRAP.value,
+                    requests=requests)
         status, response = self.gsh.process_batch_requests(
             spreadsheetId=spreadsheet_id, requests=requests)
         logging.info({
@@ -469,7 +482,11 @@ class TimeSheetAPI:
             spreadsheetId=spreadsheet_id, requests=requests)
         if status:
             self.add_projects_sheet(
-                sheet_index, "Projects", spreadsheet_id=spreadsheet_id)
+                sheet_index,
+                "Projects",
+                projects=self.common_project_fields +
+                [project_name if project_name else self.default_project_name],
+                spreadsheet_id=spreadsheet_id)
 
         i = 0
         requests = []
@@ -492,7 +509,17 @@ class TimeSheetAPI:
                 sheet_index,
                 "Weekly",
                 sheets[1:],
-                spreadsheet_id=spreadsheet_id)
+                spreadsheet_id=spreadsheet_id,
+                requests=[])
+
+            requests = self.gsh.data_alignment(
+                sheetIndex=sheet_index,
+                start_row_index=1,
+                end_row_index=6,
+                start_col_index=1,
+                end_col_index=len(sheets) + 2,
+                alignment=Format.CENTER.value,
+                requests=requests)
 
             print "Adding Weekly Column Chart in Sheet"
             requests = self.gsh.add_column_chart(
@@ -515,7 +542,8 @@ class TimeSheetAPI:
                 "Sprint - Hrs",
                 sheets[1:],
                 end_index=end_index,
-                spreadsheet_id=spreadsheet_id)
+                spreadsheet_id=spreadsheet_id,
+                requests=[])
 
             print "Adding Sprint Bar Chart in Sheet"
             requests = self.gsh.add_bar_chart(
@@ -589,6 +617,7 @@ class TimeSheetAPI:
                 month=month,
                 year=year,
                 sheets=sheets,
+                project_name=projectName,
                 spreadsheet_id=spreadsheet_id)
             response_object = {
                 "processingTime": time.time() - total_time,
