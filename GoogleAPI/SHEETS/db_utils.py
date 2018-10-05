@@ -9,15 +9,10 @@ class mongoDB:
                  db_name=config.MONGODB_NAME):
         self.db = MongoClient(host, port)[db_name]
         self.ensure_indexes(
-            config.PREBUILD_TIMESHEET_COLLECTION,
-            index_list=[config.DATE_1_DAY, config.NUMBER_OF_DAYS_IN_MONTH])
-        self.ensure_indexes(
             config.TIMESHEET_COLLECTION,
             index_list=[
-                config.SPREADSHEET_ID, [
-                    config.PROJECT_NAME, config.ADMIN_EMAIL, config.MONTH,
-                    config.YEAR
-                ]
+                config.SPREADSHEET_ID,
+                [config.ADMIN_EMAIL, config.MONTH, config.YEAR]
             ])
 
     def ensure_indexes(self, collection_name, index_list=[]):
@@ -83,15 +78,28 @@ class mongoDB:
         self.db[collection_name].update(
             query, update_dict, upsert=upsert, multi=multi)
 
-    def fetch_spreadsheet_id_from_prebuild_db(self,
-                                              start_day=None,
-                                              total_days=0):
+    def fetch_spreadsheet_id(self,
+                             month=None,
+                             year=None,
+                             email=None,
+                             project=None):
         spreadsheet_id = None
-        if start_day and total_days:
-            elem = self.db[config.PREBUILD_TIMESHEET_COLLECTION].find_one({
-                config.DATE_1_DAY: start_day,
-                config.NUMBER_OF_DAYS_IN_MONTH: total_days
-            }, {config.SPREADSHEET_ID: 1})
-            if elem and config.SPREADSHEET_ID in elem:
-                spreadsheet_id = elem[config.SPREADSHEET_ID]
+        if month and year and email:
+            cursor = self.db[config.TIMESHEET_COLLECTION].find({
+                config.ADMIN_EMAIL: email,
+                config.YEAR: year,
+                config.MONTH: month
+            }, {config.SPREADSHEET_ID: 1,
+                config.PROJECT_NAME: 1})
+            if cursor.count() == 1:
+                elem = cursor[0]
+                if config.SPREADSHEET_ID in elem:
+                    spreadsheet_id = elem[config.SPREADSHEET_ID]
+            elif cursor.count() > 1 and project:
+                for elem in cursor:
+                    if config.PROJECT_NAME in elem and config.SPREADSHEET_ID in elem and elem[
+                            config.PROJECT_NAME].lower().strip(
+                            ) == project.lower().strip():
+                        spreadsheet_id = elem[config.SPREADSHEET_ID]
+                        break
         return spreadsheet_id

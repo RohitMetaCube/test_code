@@ -1,22 +1,26 @@
-from google_sheet_handler import GoogleSheetHandler
+from google_sheet_handler import GoogleSheetHandler, Format
 import math
 import time
-import googleapiclient
-import json
 import cherrypy
 import sys
 from log_utils import OneLineExceptionFormatter
 import logging
+from db_utils import mongoDB
+import config
 
 
 class TimeSheetAPI:
-    api_start_time = time.time()
     MONTH_PARAMETER = "month"
     YEAR_PARAMETER = "year"
     SHEET_ID_PARAMETER = "spreadsheetID"
-    USERS_PARAMETER = "usersNameList"
-    LOG_FORMAT_STRING = '%(asctime)s [%(levelname)s] %(message)s'
-    LOG_TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
+    USERS_PARAMETER = "usersList"
+    USERNAME_PARAMETER = "userName"
+    USER_EMAIL_PARAMETER = "userEmailAddr"
+    USER_ID_PARAMETER = "userID"
+    USER_LEAVES_PARAMETER = "userLeaveDates"
+    USER_SPECIAL_WORKING_DAYS_PARAMETER = "userSpecialWorkingDates"
+    PROJECT_NAME_PARAMETER = "projectName"
+    ADMIN_EMAIL_PARAMETER = "adminEmailAddr"
     MARKING_TYPE_PARAMETER = "markingType"
     MARKING_DATES_PARAMETER = "markingDates"
     MARKING_SHEET_NAME_PARAMETER = "markingSheetName"
@@ -24,6 +28,10 @@ class TimeSheetAPI:
     LEAVE_MARKING = "leave"
     WORKDAY_MARKING = "working"
     HOLIDAY_MARKING = "holiday"
+
+    api_start_time = time.time()
+    LOG_FORMAT_STRING = '%(asctime)s [%(levelname)s] %(message)s'
+    LOG_TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
     def __init__(self):
         self.WEEK_DAYS = [
@@ -45,6 +53,9 @@ class TimeSheetAPI:
         self.leave_hex = "FFFF00"
         self.holiday_hex = "CCFFCC"
         self.workday_hex = "FFFFFF"
+
+        # Initialize MongoDB instance
+        self.mongodb = mongoDB()
 
     def compute_number_of_days(self, month, year):
         month -= 1
@@ -428,6 +439,20 @@ class TimeSheetAPI:
                     month=month,
                     year=year,
                     requests=requests)
+                requests = self.gsh.data_alignment(
+                    sheetIndex=sheet_index,
+                    end_row_index=end_index,
+                    alignment=Format.CENTER.value,
+                    requests=requests)
+                requests = self.gsh.data_alignment(
+                    sheetIndex=sheet_index,
+                    start_row_index=self.HEADER_ROWS_COUNT,
+                    end_row_index=end_index - 1,
+                    start_col_index=3,
+                    end_col_index=4,
+                    alignment=Format.LEFT.value,
+                    wrap=Format.WRAP.value,
+                    requests=requests)
         status, response = self.gsh.process_batch_requests(
             spreadsheetId=spreadsheet_id, requests=requests)
         logging.info({
@@ -503,6 +528,24 @@ class TimeSheetAPI:
 
         return spreadsheet_id
 
+    def update_user_details(self, users, spreadsheet_id):
+        for user in users:
+            self.gsh.update_data_in_sheet(
+                spreadsheetId=spreadsheet_id,
+                range_="{}!A1:A1".format(user[
+                    TimeSheetAPI.USERNAME_PARAMETER]),
+                data_list=[[
+                    "Name:  {}  -  {}".format(
+                        user[TimeSheetAPI.USER_ID_PARAMETER]
+                        if TimeSheetAPI.USER_ID_PARAMETER in user else "",
+                        user[TimeSheetAPI.USERNAME_PARAMETER])
+                ]])
+            ''' Share Sheet with User '''
+            if TimeSheetAPI.USER_EMAIL_PARAMETER in user:
+                user[TimeSheetAPI.USER_EMAIL_PARAMETER]
+            ''' Mark Leaves '''
+            ''' Mark Special Working Days '''
+
     @cherrypy.expose
     @cherrypy.tools.json_out()
     @cherrypy.tools.json_in()
@@ -523,13 +566,23 @@ class TimeSheetAPI:
             TimeSheetAPI.
             YEAR_PARAMETER] if TimeSheetAPI.YEAR_PARAMETER in params else time.localtime(
             )[0]
-        sheets = params[
+        users = params[
             TimeSheetAPI.
             USERS_PARAMETER] if TimeSheetAPI.USERS_PARAMETER in params else []
         spreadsheet_id = params[
             TimeSheetAPI.
             SHEET_ID_PARAMETER] if TimeSheetAPI.SHEET_ID_PARAMETER in params else None
+        adminEmail = params[
+            TimeSheetAPI.
+            ADMIN_EMAIL_PARAMETER] if TimeSheetAPI.ADMIN_EMAIL_PARAMETER in params else None
+        projectName = params[
+            TimeSheetAPI.
+            PROJECT_NAME_PARAMETER] if TimeSheetAPI.PROJECT_NAME_PARAMETER in params else None
 
+        users = [
+            user for user in users if TimeSheetAPI.USERNAME_PARAMETER in user
+        ]
+        sheets = [user[TimeSheetAPI.USERNAME_PARAMETER] for user in users]
         sheets.insert(0, None)
         if month:
             spreadsheet_id = self.sheet_processor(
@@ -541,6 +594,41 @@ class TimeSheetAPI:
                 "processingTime": time.time() - total_time,
                 "spreadsheetID": spreadsheet_id
             }
+            self.mongodb.update_data(
+                collection_name=config.TIMESHEET_COLLECTION,
+                query={config.SPREADSHEET_ID: spreadsheet_id},
+                update_dict={
+                    "$set": {
+                        config.MONTH: month,
+                        config.YEAR: year,
+                        config.PROJECT_NAME: projectName,
+                        config.ADMIN: None,
+                        config.ADMIN_EMAIL: adminEmail,
+                        config.USERS_LIST: [{
+                            config.USERNAME:
+                            user[TimeSheetAPI.USERNAME_PARAMETER],
+                            config.USER_SHEET_INDEX: i + 1,
+                            config.USER_EMAIL:
+                            user[TimeSheetAPI.USER_EMAIL_PARAMETER]
+                            if TimeSheetAPI.USER_EMAIL_PARAMETER in user else
+                            None,
+                            config.USER_ID:
+                            user[TimeSheetAPI.USER_ID_PARAMETER] if
+                            TimeSheetAPI.USER_ID_PARAMETER in user else None,
+                            config.USER_LEAVES:
+                            user[TimeSheetAPI.USER_LEAVES_PARAMETER] if
+                            TimeSheetAPI.USER_LEAVES_PARAMETER in user else [],
+                            config.USER_SPECIAL_WORKING_DAYS:
+                            user[TimeSheetAPI.
+                                 USER_SPECIAL_WORKING_DAYS_PARAMETER]
+                            if TimeSheetAPI.USER_SPECIAL_WORKING_DAYS_PARAMETER
+                            in user else []
+                        } for i, user in enumerate(users)]
+                    }
+                },
+                upsert=True,
+                multi=False)
+            self.update_user_details(users, spreadsheet_id)
         else:
             response_object = {error_message: error_message}
         return response_object
@@ -555,16 +643,12 @@ class TimeSheetAPI:
         params = {}
         if cherrypy.request.method == "POST":
             params = cherrypy.request.json
-        error_message = "Missing Required Parameter"
+        error_message = "Missing Required Parameters ({} and {} and {} and {})".format(
+            TimeSheetAPI.SHEET_ID_PARAMETER,
+            TimeSheetAPI.MARKING_SHEET_INDEX_PARAMETER,
+            TimeSheetAPI.MARKING_TYPE_PARAMETER,
+            TimeSheetAPI.MARKING_DATES_PARAMETER)
         total_time = time.time()
-        month = params[
-            TimeSheetAPI.
-            MONTH_PARAMETER] if TimeSheetAPI.MONTH_PARAMETER in params else time.localtime(
-            )[1]
-        year = params[
-            TimeSheetAPI.
-            YEAR_PARAMETER] if TimeSheetAPI.YEAR_PARAMETER in params else time.localtime(
-            )[0]
         spreadsheet_id = params[
             TimeSheetAPI.
             SHEET_ID_PARAMETER] if TimeSheetAPI.SHEET_ID_PARAMETER in params else None
@@ -580,8 +664,39 @@ class TimeSheetAPI:
         markingDates = params[
             TimeSheetAPI.
             MARKING_DATES_PARAMETER] if TimeSheetAPI.MARKING_DATES_PARAMETER in params else []
+        adminEmail = params[
+            TimeSheetAPI.
+            ADMIN_EMAIL_PARAMETER] if TimeSheetAPI.ADMIN_EMAIL_PARAMETER in params else None
+        projectName = params[
+            TimeSheetAPI.
+            PROJECT_NAME_PARAMETER] if TimeSheetAPI.PROJECT_NAME_PARAMETER in params else None
+        month = params[
+            TimeSheetAPI.
+            MONTH_PARAMETER] if TimeSheetAPI.MONTH_PARAMETER in params else time.localtime(
+            )[1]
+        year = params[
+            TimeSheetAPI.
+            YEAR_PARAMETER] if TimeSheetAPI.YEAR_PARAMETER in params else time.localtime(
+            )[0]
 
-        if (sheetName or sheetIndex) and markingType and markingDates:
+        if not spreadsheet_id and adminEmail:
+            spreadsheet_id = self.mongodb.fetch_spreadsheet_id(
+                month, year, email=adminEmail, project=projectName)
+            if not spreadsheet_id:
+                error_message = "Required parameter spreadsheetID or (adminEmail and projectName)"
+
+        if not sheetIndex and sheetName and spreadsheet_id:
+            existing_sheets = self.gsh.get_all_existing_sheet_indexes(
+                spreadsheetId=spreadsheet_id)
+            if sheetName in set(existing_sheets.values()):
+                for sheet_index, sheet_name in existing_sheets.items():
+                    if sheet_name == sheetName:
+                        sheetIndex = sheet_index
+                        break
+            if not sheetIndex:
+                error_message = "Required Parameter valid sheetName or sheetIndex"
+
+        if spreadsheet_id and sheetIndex and markingType and markingDates:
             if markingType == TimeSheetAPI.LEAVE_MARKING:
                 r, g, b = self.get_rgb_from_hex(self.leave_hex)
             elif markingType == TimeSheetAPI.HOLIDAY_MARKING:

@@ -18,6 +18,21 @@ try:
 except ImportError:
     flags = None
 
+# importing enum for enumerations 
+import enum
+
+
+# creating enumerations using class 
+class Format(enum.Enum):
+    CENTER = "CENTER"
+    LEFT = "LEFT"
+    RIGHT = "RIGHT"
+    WRAP = "WRAP"
+    NO_WRAPING = "WRAP_STRATEGY_UNSPECIFIED"
+    OVERFLOW_CELL = "OVERFLOW_CELL"
+    LEGACY_WRAP = "LEGACY_WRAP"
+    CLIP = "CLIP"
+
 
 class GoogleSheetHandler():
     # Google Color Codes are available at https://material.io/guidelines/style/color.html#color-color-palette
@@ -365,6 +380,36 @@ class GoogleSheetHandler():
                 },
                 "fields":
                 "userEnteredFormat(backgroundColor,textFormat,horizontalAlignment)"
+            }
+        }
+        requests.append(request)
+        return requests
+
+    def data_alignment(self,
+                       sheetIndex=0,
+                       start_row_index=0,
+                       end_row_index=1,
+                       start_col_index=0,
+                       end_col_index=6,
+                       alignment=Format.CENTER.value,
+                       wrap=Format.NO_WRAPING.value,
+                       requests=[]):
+        request = {
+            "repeatCell": {
+                "range": {
+                    "sheetId": sheetIndex,
+                    "startRowIndex": start_row_index,
+                    "endRowIndex": end_row_index,
+                    "startColumnIndex": start_col_index,
+                    "endColumnIndex": end_col_index
+                },
+                "cell": {
+                    "userEnteredFormat": {
+                        "horizontalAlignment": alignment,
+                        "wrapStrategy": wrap
+                    }
+                },
+                "fields": "userEnteredFormat(horizontalAlignment,wrapStrategy)"
             }
         }
         requests.append(request)

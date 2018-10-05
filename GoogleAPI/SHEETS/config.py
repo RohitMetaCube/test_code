@@ -4,7 +4,6 @@ MONGODB_PORT = 27017
 MONGODB_NAME = "timesheets"
 
 # Collections
-PREBUILD_TIMESHEET_COLLECTION = "prebuild_spreadsheets"
 TIMESHEET_COLLECTION = "generated_timesheets"
 
 # Fields
@@ -18,6 +17,6 @@ USERS_LIST = "users"
 USERNAME = "userName"
 USER_SHEET_INDEX = "userSheetIndex"
 USER_EMAIL = "userEmailAddr"
+USER_ID = "employeeID"
 USER_LEAVES = "userLeaveDates"
-DATE_1_DAY = "weekdayOnDate1"
-NUMBER_OF_DAYS_IN_MONTH = "numberOfDaysInMonth"
+USER_SPECIAL_WORKING_DAYS = "userSpecialWorkingDates"

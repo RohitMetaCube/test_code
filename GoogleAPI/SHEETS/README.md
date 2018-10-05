@@ -9,10 +9,25 @@
 <i>{
   "month":11,
   "year":2018,
-  "usersNameList": ["Rohit Kumar", "Piyush Beli"]
+  "projectName":"Zippia",
+  "adminEmailAddr": "rohitkumar1800@gmail.com",
+  "usersList": [{
+    			 	"userName":"Rohit Kumar", 
+                 	"userEmailAddr":"rohit.kumar@metacube.com",
+                 	"userID":"E15/0642"
+                }, {
+                  	"userName":"Piyush Beli",
+                  	"userEmailAddr":"piyush.beli@metacube.com",
+                    "userID":"E14/0541"
+  }]
 }</i>
 <br>
-<br>
+<b>Response:</b><br>
+<i>{
+"processingTime": 46.750060081481934,
+"spreadsheetID": "1kZ0DMsmCQnZ6n3Y4_BnFtPLk4klvv94dLaImlc690Lo"
+}</i><br><br>
+
 
 <h4>MARK SPECIAL ENTRY API</h4><br><br>
 
