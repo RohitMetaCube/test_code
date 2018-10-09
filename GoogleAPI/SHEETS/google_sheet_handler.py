@@ -107,7 +107,7 @@ class GoogleSheetHandler():
                 req = self.drive_service.permissions().create(
                     fileId=spreadsheetId,
                     sendNotificationEmail=True,
-                    emailMessage="This is a Auto-Generated Mail of file sharing",
+                    emailMessage="This is an Auto Generated Mail of file sharing",
                     body=domain_permission)
                 req.execute()
 
