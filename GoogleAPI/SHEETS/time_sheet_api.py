@@ -656,7 +656,7 @@ class TimeSheetAPI:
                 multi=False)
             self.update_user_details(users, spreadsheet_id)
         else:
-            response_object = {error_message: error_message}
+            response_object = {"error_message": error_message}
         return response_object
 
     @cherrypy.expose
@@ -782,7 +782,7 @@ class TimeSheetAPI:
                 "Message": response
             }
         else:
-            response_object = {error_message: error_message}
+            response_object = {"error_message": error_message}
         return response_object
 
 
