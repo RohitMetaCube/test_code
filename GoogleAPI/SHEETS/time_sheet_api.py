@@ -26,6 +26,9 @@ class TimeSheetAPI:
     LEAVE_MARKING = "leave"
     WORKDAY_MARKING = "working"
     HOLIDAY_MARKING = "holiday"
+    WFH_MARKING = "wfhMarking"
+    SPECIAL_WORKDAY_MARKING = "isSpecialWorking"
+    
 
     api_start_time = time.time()
     LOG_FORMAT_STRING = '%(asctime)s [%(levelname)s] %(message)s'
@@ -603,9 +606,6 @@ class TimeSheetAPI:
         spreadsheet_id = params[
             TimeSheetAPI.
             SHEET_ID_PARAMETER] if TimeSheetAPI.SHEET_ID_PARAMETER in params else None
-        adminEmail = params[
-            TimeSheetAPI.
-            ADMIN_EMAIL_PARAMETER] if TimeSheetAPI.ADMIN_EMAIL_PARAMETER in params else None
         projectName = params[
             TimeSheetAPI.
             PROJECT_NAME_PARAMETER] if TimeSheetAPI.PROJECT_NAME_PARAMETER in params else None
@@ -624,36 +624,8 @@ class TimeSheetAPI:
                 spreadsheet_id=spreadsheet_id)
             response_object = {
                 "processingTime": time.time() - total_time,
-                "spreadsheetID": spreadsheet_id
+                config.SPREADSHEET_ID: spreadsheet_id
             }
-            self.mongodb.update_data(
-                collection_name=config.TIMESHEET_COLLECTION,
-                query={config.SPREADSHEET_ID: spreadsheet_id},
-                update_dict={
-                    "$set": {
-                        config.MONTH: month,
-                        config.YEAR: year,
-                        config.PROJECT_NAME: projectName,
-                        config.ADMIN: None,
-                        config.ADMIN_EMAIL: adminEmail,
-                        config.USERS_LIST: [{
-                            config.USERNAME:
-                            user[TimeSheetAPI.USERNAME_PARAMETER],
-                            config.USER_SHEET_INDEX: i + 1,
-                            config.USER_EMAIL:
-                            user[TimeSheetAPI.USER_EMAIL_PARAMETER]
-                            if TimeSheetAPI.USER_EMAIL_PARAMETER in user else
-                            None,
-                            config.USER_ID:
-                            user[TimeSheetAPI.USER_ID_PARAMETER] if
-                            TimeSheetAPI.USER_ID_PARAMETER in user else None,
-                            config.USER_LEAVES: [],
-                            config.USER_SPECIAL_WORKING_DAYS: []
-                        } for i, user in enumerate(users)]
-                    }
-                },
-                upsert=True,
-                multi=False)
             self.update_user_details(users, spreadsheet_id)
         else:
             response_object = {"error_message": error_message}
@@ -704,6 +676,7 @@ class TimeSheetAPI:
             TimeSheetAPI.
             YEAR_PARAMETER] if TimeSheetAPI.YEAR_PARAMETER in params else time.localtime(
             )[0]
+        specialWorkDay = params[TimeSheetAPI.SPECIAL_WORKDAY_MARKING] if TimeSheetAPI.SPECIAL_WORKDAY_MARKING in params else False
 
         if not spreadsheet_id and adminEmail:
             spreadsheet_id = self.mongodb.fetch_spreadsheet_id(
@@ -725,38 +698,22 @@ class TimeSheetAPI:
         if spreadsheet_id and sheetIndex and markingType and markingDates:
             if markingType == TimeSheetAPI.LEAVE_MARKING:
                 r, g, b = self.get_rgb_from_hex(self.leave_hex)
-                self.mongodb.update_data(
-                    collection_name=config.TIMESHEET_COLLECTION,
-                    query={config.SPREADSHEET_ID: spreadsheet_id},
-                    update_dict={
-                        "$addToSet": {
-                            "{}.{}.{}".format(config.USERS_LIST,
-                                              sheetIndex - 1,
-                                              config.USER_LEAVES): {
-                                                  "$each": markingDates
-                                              }
-                        }
-                    },
-                    upsert=False,
-                    multi=False)
+                for date in markingDates:
+                    self.mongodb.add_leave(spreadsheet_id=spreadsheet_id, 
+                                           date=date, 
+                                           ltype='Casual', 
+                                           lpurpose='')
             elif markingType == TimeSheetAPI.HOLIDAY_MARKING:
                 r, g, b = self.get_rgb_from_hex(self.holiday_hex)
             elif markingType == TimeSheetAPI.WORKDAY_MARKING:
                 r, g, b = self.get_rgb_from_hex(self.workday_hex)
-                self.mongodb.update_data(
-                    collection_name=config.TIMESHEET_COLLECTION,
-                    query={config.SPREADSHEET_ID: spreadsheet_id},
-                    update_dict={
-                        "$addToSet": {
-                            "{}.{}.{}".format(
-                                config.USERS_LIST, sheetIndex - 1,
-                                config.USER_SPECIAL_WORKING_DAYS): {
-                                    "$each": markingDates
-                                }
-                        }
-                    },
-                    upsert=False,
-                    multi=False)
+            elif markingType == TimeSheetAPI.WFH_MARKING:
+                r, g, b = self.get_rgb_from_hex(self.workday_hex)
+                for date in markingDates:
+                    self.mongodb.add_wfh(spreadsheet_id=spreadsheet_id, date=date, wfhtype='wfh', wfhpurpose='')
+            if specialWorkDay:
+                for date in markingDates:
+                    self.mongodb.mark_special_working(spreadsheet_id=spreadsheet_id, date=date)
 
             requests = []
             for date in markingDates:

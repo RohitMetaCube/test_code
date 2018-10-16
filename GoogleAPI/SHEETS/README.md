@@ -43,31 +43,74 @@
 <H2>SAMPLE REQUEST AND RESPONSES</H2>
 <br>
 <br>
-<h4>CREATE API</h4><br>
+<h4>ADD USER BY ADMIN(required authenticated Admin account)</h4><br>
 <br>
-<b>URL:</b> http://localhost:8080/timeSheet/create
+<b>URL:</b> http://localhost:5000/webhook
 <br>
 <b>Request:</b>
 <i>{
-  "month":11,
-  "year":2018,
-  "projectName":"Zippia",
-  "adminEmailAddr": "rohitkumar1800@gmail.com",
-  "usersList": [{
-    			 	"userName":"Rohit Kumar", 
-                 	"userEmailAddr":"rohit.kumar@metacube.com",
-                 	"userID":"E15/0642"
-                }, {
-                  	"userName":"Piyush Beli",
-                  	"userEmailAddr":"piyush.beli@metacube.com",
-                    "userID":"E14/0541"
-  }]
+  	"queryResult":{"intent":{"displayName":"Add User"}},
+  	"parameters":{
+        "month":12,
+        "year":2018,
+        "projectName":"Xxxxx",
+        "adminName":"Xxxxx Xxxxx",
+        "adminEmailAddr": "xxxxxxxxx@gmail.com",          
+        "userName":"Rohit Kumar", 
+        "userEmailAddr":"xxxx.xxx@xxxxxxxx.xxxx",
+        "userID":"Xdd/dddd"
+	}
 }</i>
 <br>
 <b>Response:</b><br>
 <i>{
-"processingTime": 46.750060081481934,
-"spreadsheetID": "1kZ0DMsmCQnZ6n3Y4_BnFtPLk4klvv94dLaImlc690Lo"
+"fulfillmentText": "Cheers! User added successfully."
+}</i><br><br>
+
+<h4>REMOVE USER BY ADMIN(required authenticated Admin account)</h4><br>
+<br>
+<b>URL:</b> http://localhost:5000/webhook
+<br>
+<b>Request:</b>
+<i>{
+  	"queryResult":{"intent":{"displayName":"Remove User"}},
+  	"parameters":{
+        "month":12,
+        "year":2018,
+        "projectName":"Xxxxx",
+        "adminName":"Xxxxx Xxxxx",
+        "adminEmailAddr": "xxxxxxxxx@gmail.com",          
+        "userName":"Rohit Kumar", 
+        "userEmailAddr":"xxxx.xxx@xxxxxxxx.xxxx",
+        "userID":"Xdd/dddd"
+	}
+}</i>
+<br>
+<b>Response:</b><br>
+<i>{
+"fulfillmentText": "Removed user with email xxxxxxxxx@xxxx.com, employeeID Xdd/dddd from project "Xxxxx""
+}</i><br><br>
+
+
+<h4>CREATE API</h4><br>
+<br>
+<b>URL:</b> http://localhost:5000/webhook
+<br>
+<b>Request:</b>
+<i>{
+  	"queryResult":{"intent":{"displayName":"Create Projects Sheets"}},
+  	"parameters":{
+        "month":12,
+        "year":2018,
+        "projects":["Xxxxxx", "Xxxxx Xxxxxx"],
+        "adminName":"Xxxxxx Xxxxxxx",
+        "adminEmailAddr": "xxxxxxx@xxx.xxx"
+	}
+}</i>
+<br>
+<b>Response:</b><br>
+<i>{
+"fulfillmentText": "Hey Buddy Say Thanks to me! Your spreadsheetIDs are projectName: Zippia, spreadsheetID: 1_L6GTbpdfsygU94lGqNIZrgEzqsNO7X1EYm5EW6MUw0"
 }</i><br><br>
 
 
