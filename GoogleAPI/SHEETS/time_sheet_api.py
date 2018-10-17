@@ -26,9 +26,12 @@ class TimeSheetAPI:
     LEAVE_MARKING = "leave"
     WORKDAY_MARKING = "working"
     HOLIDAY_MARKING = "holiday"
-    WFH_MARKING = "wfhMarking"
+    WFH_MARKING = "wfh"
     SPECIAL_WORKDAY_MARKING = "isSpecialWorking"
-    
+    WORK_DATE_PARAMETER = "workingDate"
+    WORKING_HOURS = "workingHours"
+    WORK_DETAILS = "workDetails"
+    WORK_REFERENCE_TICKET = "jiraTicketNumber"
 
     api_start_time = time.time()
     LOG_FORMAT_STRING = '%(asctime)s [%(levelname)s] %(message)s'
@@ -647,15 +650,6 @@ class TimeSheetAPI:
             TimeSheetAPI.MARKING_TYPE_PARAMETER,
             TimeSheetAPI.MARKING_DATES_PARAMETER)
         total_time = time.time()
-        spreadsheet_id = params[
-            TimeSheetAPI.
-            SHEET_ID_PARAMETER] if TimeSheetAPI.SHEET_ID_PARAMETER in params else None
-        sheetName = params[
-            TimeSheetAPI.
-            MARKING_SHEET_NAME_PARAMETER] if TimeSheetAPI.MARKING_SHEET_NAME_PARAMETER in params else None
-        sheetIndex = params[
-            TimeSheetAPI.
-            MARKING_SHEET_INDEX_PARAMETER] if TimeSheetAPI.MARKING_SHEET_INDEX_PARAMETER in params else None
         markingType = params[
             TimeSheetAPI.
             MARKING_TYPE_PARAMETER] if TimeSheetAPI.MARKING_TYPE_PARAMETER in params else None
@@ -665,9 +659,6 @@ class TimeSheetAPI:
         adminEmail = params[
             TimeSheetAPI.
             ADMIN_EMAIL_PARAMETER] if TimeSheetAPI.ADMIN_EMAIL_PARAMETER in params else None
-        projectName = params[
-            TimeSheetAPI.
-            PROJECT_NAME_PARAMETER] if TimeSheetAPI.PROJECT_NAME_PARAMETER in params else None
         month = params[
             TimeSheetAPI.
             MONTH_PARAMETER] if TimeSheetAPI.MONTH_PARAMETER in params else time.localtime(
@@ -676,33 +667,45 @@ class TimeSheetAPI:
             TimeSheetAPI.
             YEAR_PARAMETER] if TimeSheetAPI.YEAR_PARAMETER in params else time.localtime(
             )[0]
-        specialWorkDay = params[TimeSheetAPI.SPECIAL_WORKDAY_MARKING] if TimeSheetAPI.SPECIAL_WORKDAY_MARKING in params else False
+        specialWorkDay = params[
+            TimeSheetAPI.
+            SPECIAL_WORKDAY_MARKING] if TimeSheetAPI.SPECIAL_WORKDAY_MARKING in params else False
+        taskDetails = params[
+            TimeSheetAPI.
+            WORK_DETAILS] if TimeSheetAPI.WORK_DETAILS in params else None
+        userID = params[
+            TimeSheetAPI.
+            USER_ID_PARAMETER] if TimeSheetAPI.USER_ID_PARAMETER in params else None
+        userEmail = params[
+            TimeSheetAPI.
+            USER_EMAIL_PARAMETER] if TimeSheetAPI.USER_EMAIL_PARAMETER in params else None
 
-        if not spreadsheet_id and adminEmail:
-            spreadsheet_id = self.mongodb.fetch_spreadsheet_id(
-                month, year, email=adminEmail, project=projectName)
-            if not spreadsheet_id:
-                error_message = "Required parameter spreadsheetID or (adminEmail and projectName)"
+        projectName = self.mongodb.fetch_project_name(
+            admin_email=adminEmail,
+            admin_id=None,
+            user_email=userEmail,
+            user_id=userID)
 
-        if not sheetIndex and sheetName and spreadsheet_id:
-            existing_sheets = self.gsh.get_all_existing_sheet_indexes(
-                spreadsheetId=spreadsheet_id)
-            if sheetName in set(existing_sheets.values()):
-                for sheet_index, sheet_name in existing_sheets.items():
-                    if sheet_name == sheetName:
-                        sheetIndex = sheet_index
-                        break
-            if not sheetIndex:
-                error_message = "Required Parameter valid sheetName or sheetIndex"
+        spreadsheet_details = self.mongodb.fetch_spreadsheet_id_and_index(
+            month, year, email=userEmail, project=projectName)
+        spreadsheet_id = spreadsheet_details[config.SPREADSHEET_ID]
+        sheetIndex = spreadsheet_details[config.USER_SHEET_INDEX]
 
-        if spreadsheet_id and sheetIndex and markingType and markingDates:
+        if not spreadsheet_id:
+            error_message = "Missing Required parameters {} AND ({} OR {})".format(
+                TimeSheetAPI.ADMIN_EMAIL_PARAMETER,
+                TimeSheetAPI.USER_EMAIL_PARAMETER,
+                TimeSheetAPI.USER_ID_PARAMETER)
+
+        if spreadsheet_id and sheetIndex != None and markingType and markingDates:
             if markingType == TimeSheetAPI.LEAVE_MARKING:
                 r, g, b = self.get_rgb_from_hex(self.leave_hex)
                 for date in markingDates:
-                    self.mongodb.add_leave(spreadsheet_id=spreadsheet_id, 
-                                           date=date, 
-                                           ltype='Casual', 
-                                           lpurpose='')
+                    self.mongodb.add_leave(
+                        spreadsheet_id=spreadsheet_id,
+                        date=date,
+                        ltype='Casual',
+                        lpurpose=taskDetails)
             elif markingType == TimeSheetAPI.HOLIDAY_MARKING:
                 r, g, b = self.get_rgb_from_hex(self.holiday_hex)
             elif markingType == TimeSheetAPI.WORKDAY_MARKING:
@@ -710,10 +713,15 @@ class TimeSheetAPI:
             elif markingType == TimeSheetAPI.WFH_MARKING:
                 r, g, b = self.get_rgb_from_hex(self.workday_hex)
                 for date in markingDates:
-                    self.mongodb.add_wfh(spreadsheet_id=spreadsheet_id, date=date, wfhtype='wfh', wfhpurpose='')
+                    self.mongodb.add_wfh(
+                        spreadsheet_id=spreadsheet_id,
+                        date=date,
+                        wfhtype='wfh',
+                        wfhpurpose=taskDetails)
             if specialWorkDay:
                 for date in markingDates:
-                    self.mongodb.mark_special_working(spreadsheet_id=spreadsheet_id, date=date)
+                    self.mongodb.mark_special_working(
+                        spreadsheet_id=spreadsheet_id, date=date)
 
             requests = []
             for date in markingDates:
@@ -740,6 +748,83 @@ class TimeSheetAPI:
             }
         else:
             response_object = {"error_message": error_message}
+        return response_object
+
+    @cherrypy.expose
+    @cherrypy.tools.json_out()
+    @cherrypy.tools.json_in()
+    def add_work_log(self, **other_params):
+        cherrypy.response.headers['Content-Type'] = "application/json"
+        cherrypy.response.headers['Connection'] = "close"
+
+        params = {}
+        if cherrypy.request.method == "POST":
+            params = cherrypy.request.json
+        error_message = "Missing Required Parameters ({} and {} and {} and {})".format(
+            TimeSheetAPI.SHEET_ID_PARAMETER,
+            TimeSheetAPI.MARKING_SHEET_INDEX_PARAMETER,
+            TimeSheetAPI.MARKING_TYPE_PARAMETER,
+            TimeSheetAPI.MARKING_DATES_PARAMETER)
+        total_time = time.time()
+        userID = params[
+            TimeSheetAPI.
+            USER_ID_PARAMETER] if TimeSheetAPI.USER_ID_PARAMETER in params else None
+        userEmail = params[
+            TimeSheetAPI.
+            USER_EMAIL_PARAMETER] if TimeSheetAPI.USER_EMAIL_PARAMETER in params else None
+        workDate = params[
+            TimeSheetAPI.
+            WORK_DATE_PARAMETER] if TimeSheetAPI.WORK_DATE_PARAMETER in params else None
+        workingHours = params[
+            TimeSheetAPI.
+            WORKING_HOURS] if TimeSheetAPI.WORKING_HOURS in params else None
+        taskDetails = params[
+            TimeSheetAPI.
+            WORK_DETAILS] if TimeSheetAPI.WORK_DETAILS in params else None
+        jiraTicketNumber = params[
+            TimeSheetAPI.
+            WORK_REFERENCE_TICKET] if TimeSheetAPI.WORK_REFERENCE_TICKET in params else None
+        adminEmail = params[
+            TimeSheetAPI.
+            ADMIN_EMAIL_PARAMETER] if TimeSheetAPI.ADMIN_EMAIL_PARAMETER in params else None
+        month = params[
+            TimeSheetAPI.
+            MONTH_PARAMETER] if TimeSheetAPI.MONTH_PARAMETER in params else time.localtime(
+            )[1]
+        year = params[
+            TimeSheetAPI.
+            YEAR_PARAMETER] if TimeSheetAPI.YEAR_PARAMETER in params else time.localtime(
+            )[0]
+
+        projectName = self.mongodb.fetch_project_name(
+            admin_email=adminEmail,
+            admin_id=None,
+            user_email=userEmail,
+            user_id=userID)
+
+        spreadsheet_details = self.mongodb.fetch_spreadsheet_id_and_index(
+            month, year, email=adminEmail, project=projectName)
+        spreadsheet_id = spreadsheet_details[config.SPREADSHEET_ID]
+        sheetIndex = spreadsheet_details[config.USER_SHEET_INDEX]
+        if not spreadsheet_id:
+            error_message = "Missing Required parameters {} AND ({} OR {})".format(
+                TimeSheetAPI.ADMIN_EMAIL_PARAMETER,
+                TimeSheetAPI.USER_EMAIL_PARAMETER,
+                TimeSheetAPI.USER_ID_PARAMETER)
+            response_object = {"error_message": error_message}
+        else:
+            self.mongodb.add_work_log(
+                spreadsheet_id=spreadsheet_id,
+                date=workDate,
+                task=taskDetails,
+                hours=workingHours,
+                jira=jiraTicketNumber)
+            response_object = {
+                "processingTime": time.time() - total_time,
+                config.SPREADSHEET_ID: spreadsheet_id,
+                config.PROJECT_NAME: projectName
+            }
+
         return response_object
 
 

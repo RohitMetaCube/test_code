@@ -78,31 +78,40 @@ class mongoDB:
         self.db[collection_name].update(
             query, update_dict, upsert=upsert, multi=multi)
 
-    def fetch_spreadsheet_id(self,
-                             month=None,
-                             year=None,
-                             email=None,
-                             project=None):
+    def fetch_spreadsheet_id_and_index(self,
+                                       month=None,
+                                       year=None,
+                                       email=None,
+                                       project=None):
         spreadsheet_id = None
+        user_sheet_index = None
         if month and year and email:
             cursor = self.db[config.USER_COLLECTION].find({
                 config.EMAIL: email,
                 config.YEAR: year,
                 config.MONTH: month
-            }, {config.SPREADSHEET_ID: 1,
-                config.PROJECT_NAME: 1})
+            }, {
+                config.SPREADSHEET_ID: 1,
+                config.USER_SHEET_INDEX: 1,
+                config.PROJECT_NAME: 1
+            })
             if cursor.count() == 1:
                 elem = cursor[0]
                 if config.SPREADSHEET_ID in elem:
                     spreadsheet_id = elem[config.SPREADSHEET_ID]
+                    user_sheet_index = elem[config.USER_SHEET_INDEX]
             elif cursor.count() > 1 and project:
                 for elem in cursor:
                     if config.PROJECT_NAME in elem and config.SPREADSHEET_ID in elem and elem[
                             config.PROJECT_NAME].lower().strip(
                             ) == project.lower().strip():
                         spreadsheet_id = elem[config.SPREADSHEET_ID]
+                        user_sheet_index = elem[config.USER_SHEET_INDEX]
                         break
-        return spreadsheet_id
+        return {
+            config.SPREADSHEET_ID: spreadsheet_id,
+            config.USER_SHEET_INDEX: user_sheet_index
+        }
 
     def fetch_project_name(self,
                            admin_email=None,
@@ -349,12 +358,12 @@ class mongoDB:
         return response_msg
 
     def remove_user(self,
-                 project_name=None,
-                 admin_email=None,
-                 admin_id=None,
-                 user_name=None,
-                 user_id=None,
-                 user_email=None):
+                    project_name=None,
+                    admin_email=None,
+                    admin_id=None,
+                    user_name=None,
+                    user_id=None,
+                    user_email=None):
         response_msg = None
         if (admin_email or admin_id) and (user_email or user_id):
             elem = None
@@ -380,19 +389,22 @@ class mongoDB:
                     for pindex, project in enumerate(elem[
                             config.PROJECTS_LIST]):
                         if project[config.PROJECT_NAME] == project_name:
-                            user_index = None 
-                            for uindex, user in enumerate(project[config.USERS_LIST]):
+                            user_index = None
+                            for uindex, user in enumerate(project[
+                                    config.USERS_LIST]):
                                 if user_email and user_email == user[
                                         config.EMAIL]:
                                     response_msg = 'Removed user with email {}, employeeID {} from project "{}"'.format(
-                                        user[config.EMAIL], user[config.EMPLOYEE_ID], project_name)
-                                    user_index=uindex
+                                        user[config.EMAIL],
+                                        user[config.EMPLOYEE_ID], project_name)
+                                    user_index = uindex
                                     break
                                 elif user_id and user_id == user[
                                         config.EMPLOYEE_ID]:
                                     response_msg = 'Removed user with email {}, employeeID {} from project "{}"'.format(
-                                        user[config.EMAIL], user[config.EMPLOYEE_ID], project_name)
-                                    user_index=uindex
+                                        user[config.EMAIL],
+                                        user[config.EMPLOYEE_ID], project_name)
+                                    user_index = uindex
                                     break
                             if user_index:
                                 project[config.USERS_LIST].pop(user_index)
@@ -410,11 +422,15 @@ class mongoDB:
                                     upsert=False,
                                     multi=False)
                             else:
-                                response_msg = "User not found with email {} or employeeID {} in project {}".format(user_email, user_id, project_name)
+                                response_msg = "User not found with email {} or employeeID {} in project {}".format(
+                                    user_email, user_id, project_name)
                             break
                     if not response_msg:
                         response_msg = "Project '{}' Not found please type a correct project name\n existing projects are {}".format(
-                            project_name, [x[config.PROJECT_NAME] for x in elem[config.PROJECTS_LIST]])
+                            project_name, [
+                                x[config.PROJECT_NAME]
+                                for x in elem[config.PROJECTS_LIST]
+                            ])
                 else:
                     response_msg = "Admin did not have any project So Please add projects first."
             else:
@@ -423,4 +439,60 @@ class mongoDB:
             response_msg = "Required parameter missing ((adminEmail OR adminID) AND (userEmail OR userID))"
         return response_msg
 
-    
+    def new_user_record(self, month, year, spreadsheet_id, project_name,
+                        admin_email, user_sheet_index, email, name, user_id):
+        new_user = {
+            config.MONTH: month,
+            config.YEAR: year,
+            config.SPREADSHEET_ID: spreadsheet_id,
+            config.USER_SHEET_INDEX: user_sheet_index,
+            config.EMAIL: email,
+            config.NAME: name,
+            config.PROJECT_NAME: project_name,
+            config.ADMIN_EMAIL: admin_email,
+            config.EMPLOYEE_ID: user_id,
+            config.WORK_DETAILS: {},
+            config.USER_LEAVES: {},
+            config.WORK_FROM_HOME: {}
+        }
+        self.update_data(
+            config.USER_COLLECTION,
+            query={
+                config.MONTH: month,
+                config.YEAR: year,
+                config.EMAIL: email,
+                config.PROJECT_NAME: project_name
+            },
+            update_dict={"$set": new_user},
+            upsert=True,
+            multi=False)
+
+    def append_new_users_in_userdb(self,
+                                   admin_email=None,
+                                   admin_id=None,
+                                   projects=[]):
+        appended_users = []
+        if admin_email:
+            elem = self.db[config.ADMIN_COLLECTION].find_one({
+                config.EMAIL: admin_email
+            })
+        elif admin_id:
+            elem = self.db[config.ADMIN_COLLECTION].find_one({
+                config.EMPLOYEE_ID: admin_id
+            })
+        if elem:
+            for project in elem[config.PROJECTS_LIST]:
+                if not projects or project[config.PROJECT_NAME] in projects:
+                    for user in project[config.USERS_LIST]:
+                        self.new_user_record(
+                            month=project[config.MONTH],
+                            year=project[config.YEAR],
+                            spreadsheet_id=project[config.SPREADSHEET_ID],
+                            project_name=project[config.PROJECT_NAME],
+                            admin_email=elem[config.EMAIL],
+                            user_sheet_index=user[config.USER_SHEET_INDEX],
+                            email=user[config.EMAIL],
+                            name=user[config.NAME],
+                            user_id=user[config.EMPLOYEE_ID])
+                        appended_users.append(user)
+        return appended_users

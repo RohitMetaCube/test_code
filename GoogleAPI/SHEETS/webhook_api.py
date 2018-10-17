@@ -23,7 +23,8 @@ class Webhook:
             'Mark Entry': self.mark_entry,
             'Create Projects Sheets': self.get_projects_sheets,
             'Add User': self.add_user,
-            'Remove User':self.remove_user
+            'Remove User': self.remove_user,
+            'Add Work Log': self.add_work_log
         }
         self.headers = {
             'content-type': 'application/json',
@@ -201,6 +202,8 @@ class Webhook:
                         spreadsheet[config.PROJECT_NAME], spreadsheet[
                             config.SPREADSHEET_ID])
                               for spreadsheet in spreadsheets))
+            self.mongo.append_new_users_in_userdb(
+                admin_email=admin_email, admin_id=admin_id, projects=projects)
         else:
             response[
                 "fulfillmentText"] = "Sorry I am unable to create Time-sheets please provide some more accurate details."
@@ -210,7 +213,7 @@ class Webhook:
         response = requests.post(
             "http://0.0.0.0:8080/timeSheet/mark_entry",
             headers=self.headers,
-            json=kwargs['params'])
+            json=kwargs['params']).json()
         if "spreadsheetID" in response and response["status"]:
             response[
                 "fulfillmentText"] = "Congratulation!!! Your Entry marked in spreadsheetID: {}".format(
@@ -241,7 +244,7 @@ class Webhook:
             project_name, admin_email, admin_id, user_name, user_id,
             user_email)
         return response
-    
+
     def remove_user(self, *argv, **kwargs):
         admin_email = None if TimeSheetAPI.ADMIN_EMAIL_PARAMETER not in kwargs[
             'params'] else kwargs['params'][TimeSheetAPI.ADMIN_EMAIL_PARAMETER]
@@ -260,6 +263,23 @@ class Webhook:
         response["fulfillmentText"] = self.mongo.remove_user(
             project_name, admin_email, admin_id, user_name, user_id,
             user_email)
+        return response
+
+    def add_work_log(self, *argv, **kwargs):
+        response = requests.post(
+            "http://0.0.0.0:8080/timeSheet/add_work_log",
+            headers=self.headers,
+            json=kwargs['params']).json()
+        if config.SPREADSHEET_ID in response:
+            response[
+                "fulfillmentText"] = "Congratulation!!! Your work log added in spreadsheetID: {} for project: {}".format(
+                    response[config.SPREADSHEET_ID],
+                    response[config.PROJECT_NAME])
+        elif "error_message" in response:
+            response["fulfillmentText"] = response["error_message"]
+        else:
+            response[
+                "fulfillmentText"] = "Sorry I am unable to add your entry please provide some more accurate details."
         return response
 
     @cherrypy.expose
