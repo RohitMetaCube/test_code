@@ -780,7 +780,7 @@ class TimeSheetAPI:
             WORKING_HOURS] if TimeSheetAPI.WORKING_HOURS in params else None
         taskDetails = params[
             TimeSheetAPI.
-            WORK_DETAILS] if TimeSheetAPI.WORK_DETAILS in params else None
+            WORK_DETAILS] if TimeSheetAPI.WORK_DETAILS in params else ''
         jiraTicketNumber = params[
             TimeSheetAPI.
             WORK_REFERENCE_TICKET] if TimeSheetAPI.WORK_REFERENCE_TICKET in params else None
@@ -795,6 +795,8 @@ class TimeSheetAPI:
             TimeSheetAPI.
             YEAR_PARAMETER] if TimeSheetAPI.YEAR_PARAMETER in params else time.localtime(
             )[0]
+        taskDetails = "{}: {}".format(
+            jiraTicketNumber, taskDetails) if jiraTicketNumber else taskDetails
 
         projectName = self.mongodb.fetch_project_name(
             admin_email=adminEmail,
@@ -805,25 +807,70 @@ class TimeSheetAPI:
         spreadsheet_details = self.mongodb.fetch_spreadsheet_id_and_index(
             month, year, email=adminEmail, project=projectName)
         spreadsheet_id = spreadsheet_details[config.SPREADSHEET_ID]
-        sheetIndex = spreadsheet_details[config.USER_SHEET_INDEX]
+        sheetIndex = int(spreadsheet_details[config.USER_SHEET_INDEX])
+        userName = spreadsheet_details[config.NAME]
+        response_object = {}
         if not spreadsheet_id:
             error_message = "Missing Required parameters {} AND ({} OR {})".format(
                 TimeSheetAPI.ADMIN_EMAIL_PARAMETER,
                 TimeSheetAPI.USER_EMAIL_PARAMETER,
                 TimeSheetAPI.USER_ID_PARAMETER)
-            response_object = {"error_message": error_message}
+        elif workDate:
+            number_of_days = self.compute_number_of_days(month, year)
+            if workDate >= number_of_days or not number_of_days:
+                error_message = 'Invalid Date (DD-MM-YYYY): {}-{}-{}'.format(
+                    workDate, month, year)
+            else:
+                start_index = self.HEADER_ROWS_COUNT + 1 + self.PER_DAY_ROWS_COUNT * (
+                    workDate - 1)
+                existing_data = self.gsh.read_data_from_sheet(
+                    spreadsheetId=spreadsheet_id,
+                    rangeName='{}!D{}:E{}'.format(
+                        userName
+                        if userName else "Sheet{}".format(sheetIndex + 1),
+                        start_index, start_index + self.PER_DAY_ROWS_COUNT))
+                existing_data = [[xd[0], xd[1]] for xd in existing_data
+                                 if xd[0] or xd[1]]
+                if len(existing_data) < self.PER_DAY_ROWS_COUNT:
+                    existing_data.append([taskDetails, workingHours])
+                    [
+                        existing_data.append(['', ''])
+                        for _ in range(self.PER_DAY_ROWS_COUNT - len(
+                            existing_data))
+                    ]
+                else:
+                    existing_data[-1] = [
+                        existing_data[-1][0] + "\n" + taskDetails,
+                        float(existing_data[-1][1]) + workingHours
+                        if existing_data[-1][1] and workingHours else
+                        (workingHours
+                         if workingHours else existing_data[-1][1])
+                    ]
+                self.gsh.update_data_in_sheet(
+                    spreadsheetId=spreadsheet_id,
+                    range_='{}!D{}:E{}'.format(
+                        userName
+                        if userName else "Sheet{}".format(sheetIndex + 1),
+                        start_index, start_index + self.PER_DAY_ROWS_COUNT),
+                    data_list=existing_data)
+
+                self.mongodb.add_work_log(
+                    spreadsheet_id=spreadsheet_id,
+                    date=workDate,
+                    task=taskDetails,
+                    hours=workingHours,
+                    jira=jiraTicketNumber)
+                response_object = {
+                    "processingTime": time.time() - total_time,
+                    config.SPREADSHEET_ID: spreadsheet_id,
+                    config.PROJECT_NAME: projectName
+                }
         else:
-            self.mongodb.add_work_log(
-                spreadsheet_id=spreadsheet_id,
-                date=workDate,
-                task=taskDetails,
-                hours=workingHours,
-                jira=jiraTicketNumber)
-            response_object = {
-                "processingTime": time.time() - total_time,
-                config.SPREADSHEET_ID: spreadsheet_id,
-                config.PROJECT_NAME: projectName
-            }
+            error_message = "Missing Required Parameter {}".format(
+                TimeSheetAPI.WORK_DATE_PARAMETER)
+
+        if not response_object:
+            response_object["error_message"] = error_message
 
         return response_object
 

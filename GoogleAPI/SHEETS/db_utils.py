@@ -85,6 +85,7 @@ class mongoDB:
                                        project=None):
         spreadsheet_id = None
         user_sheet_index = None
+        user_name = None
         if month and year and email:
             cursor = self.db[config.USER_COLLECTION].find({
                 config.EMAIL: email,
@@ -93,13 +94,15 @@ class mongoDB:
             }, {
                 config.SPREADSHEET_ID: 1,
                 config.USER_SHEET_INDEX: 1,
-                config.PROJECT_NAME: 1
+                config.PROJECT_NAME: 1,
+                config.NAME: 1
             })
             if cursor.count() == 1:
                 elem = cursor[0]
                 if config.SPREADSHEET_ID in elem:
                     spreadsheet_id = elem[config.SPREADSHEET_ID]
                     user_sheet_index = elem[config.USER_SHEET_INDEX]
+                    user_name = elem[config.NAME]
             elif cursor.count() > 1 and project:
                 for elem in cursor:
                     if config.PROJECT_NAME in elem and config.SPREADSHEET_ID in elem and elem[
@@ -107,10 +110,12 @@ class mongoDB:
                             ) == project.lower().strip():
                         spreadsheet_id = elem[config.SPREADSHEET_ID]
                         user_sheet_index = elem[config.USER_SHEET_INDEX]
+                        user_name = elem[config.NAME]
                         break
         return {
             config.SPREADSHEET_ID: spreadsheet_id,
-            config.USER_SHEET_INDEX: user_sheet_index
+            config.USER_SHEET_INDEX: user_sheet_index,
+            config.NAME: user_name
         }
 
     def fetch_project_name(self,

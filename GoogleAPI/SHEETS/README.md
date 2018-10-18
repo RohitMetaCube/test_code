@@ -110,8 +110,43 @@
 <br>
 <b>Response:</b><br>
 <i>{
-"fulfillmentText": "Hey Buddy Say Thanks to me! Your spreadsheetIDs are projectName: Zippia, spreadsheetID: 1_L6GTbpdfsygU94lGqNIZrgEzqsNO7X1EYm5EW6MUw0"
+"fulfillmentText": "Hey Buddy Say Thanks to me! Your spreadsheetIDs are projectName: Xxxxx, spreadsheetID: xxxxxxx-xxxxXX-ddddxxx-dddxdx"
 }</i><br><br>
+
+<h4>ADD WORK LOG (by User)</h4><br>
+<br>
+<b>URL:</b> http://localhost:5000/webhook
+<br>
+<b>Request:</b><br>
+<i>{
+  "queryResult": {
+    "intent": {
+      "displayName": "Add Work Log"
+    }
+  },
+  "parameters": {
+    "month": 12,
+    "year": 2018,
+    "workingDate":3,
+    "workingHours":3.5,
+    "adminEmailAddr": "xxxxxddd@xxxx.xxx",
+    "userEmailAddr":"xxxdddxxx@xxxxx.xxx",
+    "workDetails":"Worked on time sheet api building",
+    "jiraTicketNumber":"DN-1967",
+    "isSpecialWorking":true
+  }
+}</i><br><br>
+
+<b>Response:</b><br>
+<i>{
+"processingTime": 3.013719081878662,
+"spreadsheetID": "xxxdddxxxXDX-dxxXddXxxxXXXxxx-Xxxx-xxxxxxx",
+"fulfillmentText": "Congratulation!!! Your work log added in spreadsheetID: xxxdddxxxXDX-dxxXddXxxxXXXxxx-Xxxx-xxxxxxx for project: Xxxxxx Xxxxxx",
+"projectName": "Xxxxxx Xxxxxx"
+}</i><br><br>
+
+
+
 
 
 <h4>MARK SPECIAL ENTRY API</h4><br><br>

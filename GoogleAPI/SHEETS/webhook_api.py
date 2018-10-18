@@ -19,7 +19,6 @@ class Webhook:
             'Welcome': self.hello,
             'Webhook Test': self.test_webhook,
             'Version': self.version,
-            #'Create Timsheet': self.create_timesheet,
             'Mark Entry': self.mark_entry,
             'Create Projects Sheets': self.get_projects_sheets,
             'Add User': self.add_user,
@@ -158,8 +157,8 @@ class Webhook:
                                             len(project[config.USERS_LIST])):
                                         updates["{}.{}.{}.{}.{}".format(
                                             config.PROJECTS_LIST, pindex,
-                                            config.USERS_LIST, uindex,
-                                            config.USER_SHEET_INDEX)] = uindex
+                                            config.USERS_LIST, uindex, config.
+                                            USER_SHEET_INDEX)] = uindex + 1
                             else:
                                 new_entry[
                                     config.
@@ -185,7 +184,7 @@ class Webhook:
                                     updates["{}.{}.{}.{}.{}".format(
                                         config.PROJECTS_LIST, pindex,
                                         config.USERS_LIST, uindex,
-                                        config.USER_SHEET_INDEX)] = uindex
+                                        config.USER_SHEET_INDEX)] = uindex + 1
                             spreadsheets.append(new_entry)
                     if updates:
                         self.mongo.update_data(
