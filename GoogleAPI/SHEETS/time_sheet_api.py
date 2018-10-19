@@ -795,6 +795,10 @@ class TimeSheetAPI:
             TimeSheetAPI.
             YEAR_PARAMETER] if TimeSheetAPI.YEAR_PARAMETER in params else time.localtime(
             )[0]
+        specialWorkDay = params[
+            TimeSheetAPI.
+            SPECIAL_WORKDAY_MARKING] if TimeSheetAPI.SPECIAL_WORKDAY_MARKING in params else False
+
         taskDetails = "{}: {}".format(
             jiraTicketNumber, taskDetails) if jiraTicketNumber else taskDetails
 
@@ -842,9 +846,9 @@ class TimeSheetAPI:
                     existing_data[-1] = [
                         existing_data[-1][0] + "\n" + taskDetails,
                         float(existing_data[-1][1]) + workingHours
-                        if existing_data[-1][1] and workingHours else
-                        (workingHours
-                         if workingHours else existing_data[-1][1])
+                        if existing_data[-1][1] and workingHours else (
+                            workingHours
+                            if workingHours else existing_data[-1][1])
                     ]
                 self.gsh.update_data_in_sheet(
                     spreadsheetId=spreadsheet_id,
@@ -860,6 +864,11 @@ class TimeSheetAPI:
                     task=taskDetails,
                     hours=workingHours,
                     jira=jiraTicketNumber)
+
+                if specialWorkDay:
+                    self.mongodb.mark_special_working(
+                        spreadsheet_id=spreadsheet_id, date=workDate)
+
                 response_object = {
                     "processingTime": time.time() - total_time,
                     config.SPREADSHEET_ID: spreadsheet_id,

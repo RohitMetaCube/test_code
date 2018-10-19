@@ -8,6 +8,7 @@ import requests
 from time_sheet_api import TimeSheetAPI
 import config
 from db_utils import mongoDB
+import time
 
 
 class Webhook:
@@ -93,10 +94,14 @@ class Webhook:
         return spreadsheet_id
 
     def get_projects_sheets(self, *args, **kwargs):
-        month = None if TimeSheetAPI.MONTH_PARAMETER not in kwargs[
-            'params'] else kwargs['params'][TimeSheetAPI.MONTH_PARAMETER]
-        year = None if TimeSheetAPI.YEAR_PARAMETER not in kwargs[
-            'params'] else kwargs['params'][TimeSheetAPI.YEAR_PARAMETER]
+        month = kwargs['params'][
+            TimeSheetAPI.
+            MONTH_PARAMETER] if TimeSheetAPI.MONTH_PARAMETER in kwargs[
+                'params'] else time.localtime()[1]
+        year = kwargs[
+            'params'][TimeSheetAPI.
+                      YEAR_PARAMETER] if TimeSheetAPI.YEAR_PARAMETER in kwargs[
+                          'params'] else time.localtime()[0]
         admin_email = None if TimeSheetAPI.ADMIN_EMAIL_PARAMETER not in kwargs[
             'params'] else kwargs['params'][TimeSheetAPI.ADMIN_EMAIL_PARAMETER]
         admin_id = None if "adminID" not in kwargs['params'] else kwargs[
@@ -168,23 +173,36 @@ class Webhook:
                                         project_name=project[
                                             config.PROJECT_NAME],
                                         users=project[config.USERS_LIST])
-                                updates["{}.{}.{}".format(
-                                    config.PROJECTS_LIST, pindex,
-                                    config.SPREADSHEET_ID)] = new_entry[
-                                        config.SPREADSHEET_ID]
                                 if project[config.SPREADSHEET_ID] and (
                                         year > project[config.YEAR] or
-                                        month > project[config.MONTH]):
+                                    (year == project[config.YEAR] and
+                                     month > project[config.MONTH])):
+                                    updates["{}.{}.{}".format(
+                                        config.PROJECTS_LIST, pindex,
+                                        config.SPREADSHEET_ID)] = new_entry[
+                                            config.SPREADSHEET_ID]
                                     updates["{}.{}.{}.{}".format(
                                         config.PROJECTS_LIST, pindex, config.
-                                        OLD_SHEETS, (month, year))] = project[
-                                            config.SPREADSHEET_ID]
-                                for uindex in range(
-                                        len(project[config.USERS_LIST])):
-                                    updates["{}.{}.{}.{}.{}".format(
+                                        OLD_SHEETS, (project[config.MONTH],
+                                                     project[config.YEAR])
+                                    )] = project[config.SPREADSHEET_ID]
+                                    updates["{}.{}.{}".format(
                                         config.PROJECTS_LIST, pindex,
-                                        config.USERS_LIST, uindex,
-                                        config.USER_SHEET_INDEX)] = uindex + 1
+                                        config.MONTH)] = month
+                                    updates["{}.{}.{}".format(
+                                        config.PROJECTS_LIST, pindex,
+                                        config.YEAR)] = year
+                                    for uindex in range(
+                                            len(project[config.USERS_LIST])):
+                                        updates["{}.{}.{}.{}.{}".format(
+                                            config.PROJECTS_LIST, pindex,
+                                            config.USERS_LIST, uindex, config.
+                                            USER_SHEET_INDEX)] = uindex + 1
+                                else:
+                                    updates["{}.{}.{}.{}".format(
+                                        config.PROJECTS_LIST, pindex,
+                                        config.OLD_SHEETS, (month, year)
+                                    )] = new_entry[config.SPREADSHEET_ID]
                             spreadsheets.append(new_entry)
                     if updates:
                         self.mongo.update_data(
