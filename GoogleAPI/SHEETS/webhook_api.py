@@ -21,9 +21,9 @@ class Webhook:
             'Webhook Test': self.test_webhook,
             'Version': self.version,
             'Mark Entry': self.mark_entry,
-            'Create Projects Sheets': self.get_projects_sheets,
-            'Add User': self.add_user,
-            'Remove User': self.remove_user,
+            'Create Projects Sheets - custom': self.get_projects_sheets,
+            'Add User - custom - custom': self.add_user,
+            'Remove User - custom - custom': self.remove_user,
             'Add Work Log': self.add_work_log
         }
         self.headers = {
@@ -106,8 +106,8 @@ class Webhook:
             'params'] else kwargs['params'][TimeSheetAPI.ADMIN_EMAIL_PARAMETER]
         admin_id = None if "adminID" not in kwargs['params'] else kwargs[
             'params']["adminID"]
-        projects = None if "projects" not in kwargs['params'] else kwargs[
-            'params']['projects']
+        projects = [] if config.PROJECT_NAME not in kwargs[
+            'params'] else kwargs['params'][config.PROJECT_NAME]
 
         spreadsheets = []
         if admin_email or admin_id:
@@ -315,6 +315,7 @@ class Webhook:
                     "intent"]:
             intent_name = params["queryResult"]["intent"]["displayName"]
             if intent_name in self.intent_map:
+                params = params["queryResult"]["outputContexts"][0]
                 response = self.intent_map[intent_name](
                     params=params['parameters'])
             else:

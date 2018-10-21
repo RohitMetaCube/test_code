@@ -10,28 +10,28 @@ import config
 
 
 class TimeSheetAPI:
-    MONTH_PARAMETER = "month"
-    YEAR_PARAMETER = "year"
-    SHEET_ID_PARAMETER = "spreadsheetID"
-    USERS_PARAMETER = "usersList"
-    USERNAME_PARAMETER = "userName"
-    USER_EMAIL_PARAMETER = "userEmailAddr"
-    USER_ID_PARAMETER = "userID"
-    PROJECT_NAME_PARAMETER = "projectName"
-    ADMIN_EMAIL_PARAMETER = "adminEmailAddr"
+    MONTH_PARAMETER = config.MONTH
+    YEAR_PARAMETER = config.YEAR
+    SHEET_ID_PARAMETER = config.SPREADSHEET_ID
+    USERS_PARAMETER = config.USERS_LIST
+    USERNAME_PARAMETER = config.NAME
+    USER_EMAIL_PARAMETER = config.EMAIL
+    USER_ID_PARAMETER = config.EMPLOYEE_ID
+    PROJECT_NAME_PARAMETER = config.PROJECT_NAME
+    ADMIN_EMAIL_PARAMETER = config.ADMIN_EMAIL
     MARKING_TYPE_PARAMETER = "markingType"
     MARKING_DATES_PARAMETER = "markingDates"
     MARKING_SHEET_NAME_PARAMETER = "markingSheetName"
-    MARKING_SHEET_INDEX_PARAMETER = "markingSheetIndex"
+    MARKING_SHEET_INDEX_PARAMETER = config.USER_SHEET_INDEX
     LEAVE_MARKING = "leave"
     WORKDAY_MARKING = "working"
     HOLIDAY_MARKING = "holiday"
     WFH_MARKING = "wfh"
-    SPECIAL_WORKDAY_MARKING = "isSpecialWorking"
+    SPECIAL_WORKDAY_MARKING = config.SPECIAL_WORKING_FLAG
     WORK_DATE_PARAMETER = "workingDate"
-    WORKING_HOURS = "workingHours"
-    WORK_DETAILS = "workDetails"
-    WORK_REFERENCE_TICKET = "jiraTicketNumber"
+    WORKING_HOURS = config.WORKING_HOURS
+    WORK_DETAILS = config.WORK_DETAILS
+    WORK_REFERENCE_TICKET = config.JIRA_TICKET_NUMBER
 
     api_start_time = time.time()
     LOG_FORMAT_STRING = '%(asctime)s [%(levelname)s] %(message)s'
