@@ -21,7 +21,7 @@ class Webhook:
             'Webhook Test': self.test_webhook,
             'Version': self.version,
             'Mark Entry': self.mark_entry,
-            'Create Projects Sheets - custom': self.get_projects_sheets,
+            'Create Projects Sheets - custom - custom': self.get_projects_sheets,
             'Add User - custom - custom': self.add_user,
             'Remove User - custom - custom': self.remove_user,
             'Add Work Log': self.add_work_log

@@ -49,17 +49,21 @@
 <br>
 <b>Request:</b>
 <i>{
-  	"queryResult":{"intent":{"displayName":"Add User"}},
-  	"parameters":{
-        "month":12,
-        "year":2018,
-        "projectName":"Xxxxx",
-        "adminName":"Xxxxx Xxxxx",
-        "adminEmailAddr": "xxxxxxxxx@gmail.com",          
-        "userName":"Rohit Kumar", 
-        "userEmailAddr":"xxxx.xxx@xxxxxxxx.xxxx",
-        "userID":"Xdd/dddd"
-	}
+      "queryResult":{
+      "intent":{"displayName":"Add User - custom - custom"},
+      "outputContexts":[
+        {
+          "parameters":{
+              "projectName":"Xxxxx",
+              "adminEmail": "xxxxxxxxx@gmail.com",          
+              "name":"Rohit Kumar", 
+              "email":"xxxx.xxx@xxxxxxxx.xxxx",
+              "employeeID":"Xdd/dddd",
+	      "month":12,
+              "year":2018      
+          }
+       }]
+    }
 }</i>
 <br>
 <b>Response:</b><br>
@@ -73,17 +77,18 @@
 <br>
 <b>Request:</b>
 <i>{
-  	"queryResult":{"intent":{"displayName":"Remove User"}},
-  	"parameters":{
-        "month":12,
-        "year":2018,
-        "projectName":"Xxxxx",
-        "adminName":"Xxxxx Xxxxx",
-        "adminEmailAddr": "xxxxxxxxx@gmail.com",          
-        "userName":"Rohit Kumar", 
-        "userEmailAddr":"xxxx.xxx@xxxxxxxx.xxxx",
-        "userID":"Xdd/dddd"
-	}
+      "queryResult":{
+      "intent":{"displayName":"Remove User - custom - custom"},
+      "outputContexts":[
+        {
+          "parameters":{
+              "projectName":"Xxxxx",
+              "adminEmail": "xxxxxxxxx@gmail.com",          
+              "email":"xxxx.xxx@xxxxxxxx.xxxx",
+              "employeeID":"Xdd/dddd"
+          }
+       }]
+    }
 }</i>
 <br>
 <b>Response:</b><br>
@@ -98,14 +103,18 @@
 <br>
 <b>Request:</b>
 <i>{
-  	"queryResult":{"intent":{"displayName":"Create Projects Sheets"}},
-  	"parameters":{
-        "month":12,
-        "year":2018,
-        "projects":["Xxxxxx", "Xxxxx Xxxxxx"],
-        "adminName":"Xxxxxx Xxxxxxx",
-        "adminEmailAddr": "xxxxxxx@xxx.xxx"
-	}
+      "queryResult":{
+      "intent":{"displayName":"Create Projects Sheets - custom - custom"},
+      "outputContexts":[
+        {
+          "parameters":{
+              "projectName": ["Xxxxxx", "Xxxxx Xxxxxx"],
+              "adminEmail": "xxxxxxxxx@gmail.com",          
+              "month":12,
+          	  "year":2018
+          }
+       }]
+    }
 }</i>
 <br>
 <b>Response:</b><br>
