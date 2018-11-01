@@ -59,7 +59,7 @@
               "name":"Rohit Kumar", 
               "email":"xxxx.xxx@xxxxxxxx.xxxx",
               "employeeID":"Xdd/dddd",
-	      "month":12,
+	      	  "month":12,
               "year":2018      
           }
        }]
@@ -167,16 +167,19 @@
   "queryResult": {
     "intent": {
       "displayName": "Mark Entry"
-    }
-  },
-  "parameters": {
-    "month": 12,
-    "year": 2018,
-    "adminEmailAddr": "xxxxxx@xxxx.xxx",
-    "markingType":"leave",
-  	"markingDates":[8,12],
-    "userEmailAddr":"xxxxxxxx@xxx.xxx",
-    "workDetails":"Going to Home"
+    },
+  "outputContexts":[
+        {
+            "parameters": {
+              "month": 11,
+              "year": 2018,
+              "adminEmail": "xxxdddxxx@xxx.xxx",
+              "markingType":"leave",
+              "markingDates":[5,6],
+              "email":"xxxxxxxxx@xxxxx.xxx",
+              "workDetails":"Diwali Leave"
+            }
+	}]
   }
 }</i><br><br>
 
@@ -185,16 +188,19 @@
   "queryResult": {
     "intent": {
       "displayName": "Mark Entry"
-    }
-  },
-  "parameters": {
-    "month": 12,
-    "year": 2018,
-    "adminEmailAddr": "xxxxxx@xxxx.xxx",
-    "markingType":"holiday",
-  	"markingDates":[6,7,11],
-    "userEmailAddr":"xxxxxx@xxxx.xxx",
-    "workDetails":"Going to Home"
+    },
+  "outputContexts":[
+        {
+            "parameters": {
+              "month": 11,
+              "year": 2018,
+              "adminEmail": "xxxdddxxx@xxx.xxx",
+              "markingType":"holiday",
+              "markingDates":[7,8,9,10],
+              "email":"xxxxxxxxx@xxxxx.xxx",
+              "workDetails":"Diwali Holiday"
+            }
+	}]
   }
 }</i><br><br>
 
@@ -203,16 +209,18 @@
   "queryResult": {
     "intent": {
       "displayName": "Mark Entry"
-    }
-  },
-  "parameters": {
-    "month": 12,
-    "year": 2018,
-    "adminEmailAddr": "xxxxxx@xxxx.xxx",
-    "markingType":"working",
-  	"markingDates":[3],
-    "userEmailAddr":"xxxxxx@xxxx.xxx",
-    "workDetails":"Going to Home"
+    },
+  "outputContexts":[
+        {
+            "parameters": {
+              "month": 11,
+              "year": 2018,
+              "adminEmail": "xxxdddxxx@xxx.xxx",
+              "markingType":"working",
+              "markingDates":[3,24],
+              "email":"xxxxxxxxx@xxxxx.xxx"
+            }
+	}]
   }
 }</i><br><br>
 

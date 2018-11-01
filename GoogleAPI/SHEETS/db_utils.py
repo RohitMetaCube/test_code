@@ -275,7 +275,8 @@ class mongoDB:
                 if config.PROJECTS_LIST in elem:
                     for pindex, project in enumerate(elem[
                             config.PROJECTS_LIST]):
-                        if project[config.PROJECT_NAME] == project_name:
+                        if project and project[
+                                config.PROJECT_NAME] == project_name:
                             for user in project[config.USERS_LIST]:
                                 if user_email and user_email == user[
                                         config.EMAIL]:

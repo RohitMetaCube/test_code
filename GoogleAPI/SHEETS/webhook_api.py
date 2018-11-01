@@ -21,7 +21,8 @@ class Webhook:
             'Webhook Test': self.test_webhook,
             'Version': self.version,
             'Mark Entry': self.mark_entry,
-            'Create Projects Sheets - custom - custom': self.get_projects_sheets,
+            'Create Projects Sheets - custom - custom':
+            self.get_projects_sheets,
             'Add User - custom - custom': self.add_user,
             'Remove User - custom - custom': self.remove_user,
             'Add Work Log': self.add_work_log
@@ -173,19 +174,22 @@ class Webhook:
                                         project_name=project[
                                             config.PROJECT_NAME],
                                         users=project[config.USERS_LIST])
-                                if project[config.SPREADSHEET_ID] and (
+                                if (not project[config.YEAR] or
                                         year > project[config.YEAR] or
                                     (year == project[config.YEAR] and
-                                     month > project[config.MONTH])):
+                                     (not project[config.MONTH] or
+                                      month > project[config.MONTH]))):
                                     updates["{}.{}.{}".format(
                                         config.PROJECTS_LIST, pindex,
                                         config.SPREADSHEET_ID)] = new_entry[
                                             config.SPREADSHEET_ID]
-                                    updates["{}.{}.{}.{}".format(
-                                        config.PROJECTS_LIST, pindex, config.
-                                        OLD_SHEETS, (project[config.MONTH],
-                                                     project[config.YEAR])
-                                    )] = project[config.SPREADSHEET_ID]
+                                    if project[config.SPREADSHEET_ID]:
+                                        updates["{}.{}.{}.{}".format(
+                                            config.PROJECTS_LIST, pindex,
+                                            config.OLD_SHEETS, (project[
+                                                config.MONTH], project[
+                                                    config.YEAR]))] = project[
+                                                        config.SPREADSHEET_ID]
                                     updates["{}.{}.{}".format(
                                         config.PROJECTS_LIST, pindex,
                                         config.MONTH)] = month

@@ -688,6 +688,12 @@ class TimeSheetAPI:
 
         spreadsheet_details = self.mongodb.fetch_spreadsheet_id_and_index(
             month, year, email=userEmail, project=projectName)
+        logging.info(
+            "projectName: {}, userDetails: {}, spreadsheetDetails: {}".format(
+                projectName,
+                {'email': userEmail,
+                 "month": month,
+                 "year": year}, spreadsheet_details))
         spreadsheet_id = spreadsheet_details[config.SPREADSHEET_ID]
         sheetIndex = spreadsheet_details[config.USER_SHEET_INDEX]
 
