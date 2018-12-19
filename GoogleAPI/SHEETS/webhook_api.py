@@ -9,11 +9,25 @@ from time_sheet_api import TimeSheetAPI
 import config
 from db_utils import mongoDB
 import time
+import socket
+import string
+import random
 
 
-class Webhook:
+def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
+    return ''.join(random.choice(chars) for _ in range(size))
+
+
+class Webhook(object):
+    api_start_time = time.time()
     LOG_FORMAT_STRING = '%(asctime)s [%(levelname)s] %(message)s'
     LOG_TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
+    CLIENT_ID = "4ljR9SXowb_mHGOiqo45hA"
+    CLIENT_SECRET = "7uhCPLOLDpBm87rokO8ORw"
+    CLIENT_ID_PARAMETER = 'client_id'
+    CODE_PARAMETER = 'code'
+    ACCESS_TOKEN_PARAMETER = 'access_token'
+    EMAIL_PARAMETER = "email"
 
     def __init__(self):
         self.intent_map = {
@@ -21,10 +35,7 @@ class Webhook:
             'Webhook Test': self.test_webhook,
             'Version': self.version,
             'Mark Entry': self.mark_entry,
-            'Create Projects Sheets - custom - custom':
-            self.get_projects_sheets,
-            'Add User - custom - custom': self.add_user,
-            'Remove User - custom - custom': self.remove_user,
+            'Create Projects Sheets': self.create_project_sheet,
             'Add Work Log': self.add_work_log
         }
         self.headers = {
@@ -34,6 +45,102 @@ class Webhook:
             "accept-language": "*"
         }
         self.mongo = mongoDB()
+        self.wrs_access_token = None
+        self.user_info = {}
+        root.info("API Start Time= {}s".format(time.time() -
+                                               Webhook.api_start_time))
+
+    @cherrypy.expose
+    @cherrypy.tools.json_out()
+    def get_wrs_access_token(self, **other_params):
+        cherrypy.response.headers['Content-Type'] = "application/json"
+        cherrypy.response.headers['Connection'] = "close"
+
+        try:
+            params = cherrypy.request.params
+            wrs_client_code = params[
+                Webhook.
+                CODE_PARAMETER] if Webhook.CODE_PARAMETER in params else None
+            if wrs_client_code:
+                r = requests.post(
+                    "http://dev-accounts.agilestructure.in/sessions/get_access_token",
+                    json={
+                        Webhook.CODE_PARAMETER: wrs_client_code,
+                        Webhook.CLIENT_ID_PARAMETER: Webhook.CLIENT_ID
+                    })
+
+                response_data = {}
+
+                try:
+                    self.wrs_access_token = r.json()[
+                        Webhook.ACCESS_TOKEN_PARAMETER]
+
+                    r = requests.get(
+                        "http://dev-accounts.agilestructure.in/sessions/user_info.json",
+                        headers={"Authorization": self.wrs_access_token},
+                        params={})
+                    r = r.json()
+                    self.user_info.update(r)
+                    response_data = {
+                        "wrs_client_code": wrs_client_code,
+                        "wrs_access_token": self.wrs_access_token,
+                        "employee": r
+                    }
+                    response_data[
+                        "fulfillmentText"] = "Welcome! How can I Help You."
+                except Exception as e:
+                    response_data = {
+                        "fulfillmentText":
+                        "Unable to fetch wrs access token for wrs client code {}".
+                        format(wrs_client_code),
+                        "error": str(e)
+                    }
+                finally:
+                    # LogOut Call
+                    try:
+                        r = requests.post(
+                            "http://dev-accounts.agilestructure.in/sessions/logout.json",
+                            headers={"Authorization": self.wrs_access_token},
+                            json={
+                                Webhook.CLIENT_ID_PARAMETER: Webhook.CLIENT_ID
+                            })
+                        logging.info(r.json())
+                    except Exception as e:
+                        logging.info("Unable to logout from WRS ::: {}".format(
+                            e))
+                    return response_data
+            else:
+                return {
+                    "fulfillmentText": "code parameter not returned by WRS"
+                }
+        except Exception as e:
+            return {"fulfillmentText": "Unusual Exception Occur"}
+
+    def get_projects_of_an_employee(self, user_id):
+        r = requests.get(
+            "http://dev-services.agilestructure.in/api/v1/employees/projects.json",
+            headers={"Authorization": self.wrs_access_token},
+            params={"employee_ids": [user_id]})
+        r = r.json()
+        return r
+
+    def get_manager_of_project(self, project_id):
+        r = requests.get(
+            "http://dev-services.agilestructure.in/api/v1/groups/{}/manager.json".
+            format(project_id),
+            headers={"Authorization": self.wrs_access_token},
+            params={"group_id": project_id})
+        r = r.json()[config.WRS_UUID]
+        return r
+
+    def get_members_of_a_project(self, project_id):
+        r = requests.get(
+            "http://dev-services.agilestructure.in/api/v1/groups/{}/members.json".
+            format(project_id),
+            headers={"Authorization": self.wrs_access_token},
+            params={"group_id": project_id})
+        r = r.json()
+        return r
 
     def hello(self, *argv, **kwargs):
         msg = "Hello from APIAI Webhook Integration."
@@ -43,7 +150,7 @@ class Webhook:
         return response
 
     def version(self, *argv, **kwargs):
-        msg = "APIAI Webhook Integration. Version 1.0"
+        msg = "APIAI Webhook Integration. Version 2.0"
         response = {}
         response["fulfillmentText"] = msg
         #response["fulfillmentMessages"] = [{'text': {'text': [msg]}}]
@@ -70,164 +177,70 @@ class Webhook:
             response["fulfillmentText"] = argv[0]
         return response
 
-    def create_project_sheet(self,
-                             month=None,
-                             year=None,
-                             project_name=None,
-                             users=[]):
-        data = {}
-        data[TimeSheetAPI.MONTH_PARAMETER] = month
-        data[TimeSheetAPI.YEAR_PARAMETER] = year
-        data[TimeSheetAPI.PROJECT_NAME_PARAMETER] = project_name
-        data[TimeSheetAPI.USERS_PARAMETER] = [{
-            TimeSheetAPI.USERNAME_PARAMETER: user[config.NAME],
-            TimeSheetAPI.USER_EMAIL_PARAMETER: user[config.EMAIL],
-            TimeSheetAPI.USER_ID_PARAMETER: user[config.EMPLOYEE_ID]
-        } for user in users]
-        response = requests.post(
-            "http://0.0.0.0:8080/timeSheet/create",
-            headers=self.headers,
-            json=data).json()
-
-        spreadsheet_id = response[
-            config.
-            SPREADSHEET_ID] if config.SPREADSHEET_ID in response else None
-        return spreadsheet_id
-
-    def get_projects_sheets(self, *args, **kwargs):
-        month = kwargs['params'][
-            TimeSheetAPI.
-            MONTH_PARAMETER] if TimeSheetAPI.MONTH_PARAMETER in kwargs[
-                'params'] else time.localtime()[1]
-        year = kwargs[
-            'params'][TimeSheetAPI.
-                      YEAR_PARAMETER] if TimeSheetAPI.YEAR_PARAMETER in kwargs[
-                          'params'] else time.localtime()[0]
-        admin_email = None if TimeSheetAPI.ADMIN_EMAIL_PARAMETER not in kwargs[
-            'params'] else kwargs['params'][TimeSheetAPI.ADMIN_EMAIL_PARAMETER]
-        admin_id = None if "adminID" not in kwargs['params'] else kwargs[
-            'params']["adminID"]
-        projects = [] if config.PROJECT_NAME not in kwargs[
+    def create_project_sheet(self, *args, **kwargs):
+        month = kwargs['params'][config.MONTH] if config.MONTH in kwargs[
+            'params'] else time.localtime()[1]
+        year = kwargs['params'][config.YEAR] if config.YEAR in kwargs[
+            'params'] else time.localtime()[0]
+        project_name = None if config.PROJECT_NAME not in kwargs[
             'params'] else kwargs['params'][config.PROJECT_NAME]
 
-        spreadsheets = []
-        if admin_email or admin_id:
-            elem = None
-            if admin_email and admin_id:
-                elem = self.mongo.db[config.ADMIN_COLLECTION].find_one({
-                    config.EMAIL: admin_email,
-                    config.EMPLOYEE_ID: admin_id
-                }, {config.PROJECTS_LIST: 1,
-                    "_id": 1})
-            if admin_email and not elem:
-                elem = self.mongo.db[config.ADMIN_COLLECTION].find_one({
-                    config.EMAIL: admin_email
-                }, {config.PROJECTS_LIST: 1,
-                    "_id": 1})
-            if admin_id and not elem:
-                elem = self.mongo.db[config.ADMIN_COLLECTION].find_one({
-                    config.EMPLOYEE_ID: admin_id
-                }, {config.PROJECTS_LIST: 1,
-                    "_id": 1})
+        project_id = None
+        mJI = 0
+        projects = self.get_projects_of_an_employee(self.user_info[
+            config.WRS_USER_ID])
+        for project in projects:
+            if project[config.WRS_PROJECT_NAME] == project_name:
+                project_id = project[config.WRS_PROJECT_ID]
+                break
+            p1_tokens = project[config.WRS_PROJECT_NAME].split()
+            p2_tokens = project[config.WRS_PROJECT_NAME].split()
+            JI = len(set(p1_tokens).intersection(p2_tokens)) / len(
+                set(p1_tokens).union(p2_tokens))
+            if JI > 0.6 and JI > mJI:
+                mJI = JI
+                project_id = project[config.WRS_PROJECT_ID]
 
-            if elem:
-                if config.PROJECTS_LIST in elem:
-                    updates = {}
-                    for pindex, project in enumerate(elem[
-                            config.PROJECTS_LIST]):
-                        if not projects or project[
-                                config.PROJECT_NAME] in projects:
-                            new_entry = {
-                                config.SPREADSHEET_ID: None,
-                                config.PROJECT_NAME:
-                                project[config.PROJECT_NAME]
-                            }
-                            if project[config.MONTH] == month and project[
-                                    config.YEAR] == year:
-                                new_entry[config.SPREADSHEET_ID] = project[
-                                    config.SPREADSHEET_ID]
-                                if not new_entry[config.SPREADSHEET_ID]:
-                                    new_entry[
-                                        config.
-                                        SPREADSHEET_ID] = self.create_project_sheet(
-                                            month=month,
-                                            year=year,
-                                            project_name=project[
-                                                config.PROJECT_NAME],
-                                            users=project[config.USERS_LIST])
-                                    updates["{}.{}.{}".format(
-                                        config.PROJECTS_LIST, pindex,
-                                        config.SPREADSHEET_ID)] = new_entry[
-                                            config.SPREADSHEET_ID]
-                                    for uindex in range(
-                                            len(project[config.USERS_LIST])):
-                                        updates["{}.{}.{}.{}.{}".format(
-                                            config.PROJECTS_LIST, pindex,
-                                            config.USERS_LIST, uindex, config.
-                                            USER_SHEET_INDEX)] = uindex + 1
-                            else:
-                                new_entry[
-                                    config.
-                                    SPREADSHEET_ID] = self.create_project_sheet(
-                                        month=month,
-                                        year=year,
-                                        project_name=project[
-                                            config.PROJECT_NAME],
-                                        users=project[config.USERS_LIST])
-                                if (not project[config.YEAR] or
-                                        year > project[config.YEAR] or
-                                    (year == project[config.YEAR] and
-                                     (not project[config.MONTH] or
-                                      month > project[config.MONTH]))):
-                                    updates["{}.{}.{}".format(
-                                        config.PROJECTS_LIST, pindex,
-                                        config.SPREADSHEET_ID)] = new_entry[
-                                            config.SPREADSHEET_ID]
-                                    if project[config.SPREADSHEET_ID]:
-                                        updates["{}.{}.{}.{}".format(
-                                            config.PROJECTS_LIST, pindex,
-                                            config.OLD_SHEETS, (project[
-                                                config.MONTH], project[
-                                                    config.YEAR]))] = project[
-                                                        config.SPREADSHEET_ID]
-                                    updates["{}.{}.{}".format(
-                                        config.PROJECTS_LIST, pindex,
-                                        config.MONTH)] = month
-                                    updates["{}.{}.{}".format(
-                                        config.PROJECTS_LIST, pindex,
-                                        config.YEAR)] = year
-                                    for uindex in range(
-                                            len(project[config.USERS_LIST])):
-                                        updates["{}.{}.{}.{}.{}".format(
-                                            config.PROJECTS_LIST, pindex,
-                                            config.USERS_LIST, uindex, config.
-                                            USER_SHEET_INDEX)] = uindex + 1
-                                else:
-                                    updates["{}.{}.{}.{}".format(
-                                        config.PROJECTS_LIST, pindex,
-                                        config.OLD_SHEETS, (month, year)
-                                    )] = new_entry[config.SPREADSHEET_ID]
-                            spreadsheets.append(new_entry)
-                    if updates:
-                        self.mongo.update_data(
-                            config.ADMIN_COLLECTION,
-                            query={"_id": elem["_id"]},
-                            update_dict={"$set": updates},
-                            upsert=False,
-                            multi=False)
         response = {}
-        if spreadsheets:
-            response[
-                "fulfillmentText"] = "Hey Buddy Say Thanks to me! Your spreadsheetIDs are {}".format(
-                    "\n".join("projectName: {}, spreadsheetID: {}".format(
-                        spreadsheet[config.PROJECT_NAME], spreadsheet[
-                            config.SPREADSHEET_ID])
-                              for spreadsheet in spreadsheets))
-            self.mongo.append_new_users_in_userdb(
-                admin_email=admin_email, admin_id=admin_id, projects=projects)
+        users = []
+        if project_id:
+            if self.get_manager_of_project(project_id) == self.user_info[
+                    config.WRS_USER_UUID]:
+                users = self.get_members_of_a_project(project_id)
+                if config.WRS_EMAIL in self.user_info and self.user_info[
+                        config.WRS_EMAIL]:
+                    data = {}
+                    data[TimeSheetAPI.MONTH_PARAMETER] = month
+                    data[TimeSheetAPI.YEAR_PARAMETER] = year
+                    data[TimeSheetAPI.PROJECT_NAME_PARAMETER] = project_name
+                    data[TimeSheetAPI.USERS_PARAMETER] = [{
+                        TimeSheetAPI.USERNAME_PARAMETER: user[config.WRS_NAME],
+                        TimeSheetAPI.USER_EMAIL_PARAMETER:
+                        user[config.WRS_EMAIL],
+                        TimeSheetAPI.USER_ID_PARAMETER:
+                        user[config.WRS_EMPLOYEE_ID]
+                    } for user in users]
+                    response = requests.post(
+                        "http://0.0.0.0:8080/timeSheet/create",
+                        headers=self.headers,
+                        json=data).json()
+
+                    spreadsheet_id = response[
+                        config.
+                        SPREADSHEET_ID] if config.SPREADSHEET_ID in response else None
+                    response[
+                        "fulfillmentText"] = "Hey Buddy Say Thanks to me! Your spreadsheetID is {} for project {}".format(
+                            spreadsheet_id, project_name)
+                else:
+                    response[
+                        "fulfillmentText"] = "Sorry !!! We did not have your Email Address"
+            else:
+                response[
+                    "fulfillmentText"] = "Sorry!!! You are not a Manager for project '{}'".format(
+                        project_name)
         else:
             response[
-                "fulfillmentText"] = "Sorry I am unable to create Time-sheets please provide some more accurate details."
+                "fulfillmentText"] = "Your Project Name not found in our DB. If Possible please rephrase it."
         return response
 
     def mark_entry(self, *argv, **kwargs):
@@ -244,46 +257,6 @@ class Webhook:
         else:
             response[
                 "fulfillmentText"] = "Sorry I am unable to mark your entry please provide some more accurate details."
-        return response
-
-    def add_user(self, *argv, **kwargs):
-        admin_email = None if TimeSheetAPI.ADMIN_EMAIL_PARAMETER not in kwargs[
-            'params'] else kwargs['params'][TimeSheetAPI.ADMIN_EMAIL_PARAMETER]
-        admin_id = None if "adminID" not in kwargs['params'] else kwargs[
-            'params']["adminID"]
-        project_name = None if TimeSheetAPI.PROJECT_NAME_PARAMETER not in kwargs[
-            'params'] else kwargs['params'][
-                TimeSheetAPI.PROJECT_NAME_PARAMETER]
-        user_name = None if TimeSheetAPI.USERNAME_PARAMETER not in kwargs[
-            'params'] else kwargs['params'][TimeSheetAPI.USERNAME_PARAMETER]
-        user_id = None if TimeSheetAPI.USER_ID_PARAMETER not in kwargs[
-            'params'] else kwargs['params'][TimeSheetAPI.USER_ID_PARAMETER]
-        user_email = None if TimeSheetAPI.USER_EMAIL_PARAMETER not in kwargs[
-            'params'] else kwargs['params'][TimeSheetAPI.USER_EMAIL_PARAMETER]
-        response = {}
-        response["fulfillmentText"] = self.mongo.add_user(
-            project_name, admin_email, admin_id, user_name, user_id,
-            user_email)
-        return response
-
-    def remove_user(self, *argv, **kwargs):
-        admin_email = None if TimeSheetAPI.ADMIN_EMAIL_PARAMETER not in kwargs[
-            'params'] else kwargs['params'][TimeSheetAPI.ADMIN_EMAIL_PARAMETER]
-        admin_id = None if "adminID" not in kwargs['params'] else kwargs[
-            'params']["adminID"]
-        project_name = None if TimeSheetAPI.PROJECT_NAME_PARAMETER not in kwargs[
-            'params'] else kwargs['params'][
-                TimeSheetAPI.PROJECT_NAME_PARAMETER]
-        user_name = None if TimeSheetAPI.USERNAME_PARAMETER not in kwargs[
-            'params'] else kwargs['params'][TimeSheetAPI.USERNAME_PARAMETER]
-        user_id = None if TimeSheetAPI.USER_ID_PARAMETER not in kwargs[
-            'params'] else kwargs['params'][TimeSheetAPI.USER_ID_PARAMETER]
-        user_email = None if TimeSheetAPI.USER_EMAIL_PARAMETER not in kwargs[
-            'params'] else kwargs['params'][TimeSheetAPI.USER_EMAIL_PARAMETER]
-        response = {}
-        response["fulfillmentText"] = self.mongo.remove_user(
-            project_name, admin_email, admin_id, user_name, user_id,
-            user_email)
         return response
 
     def add_work_log(self, *argv, **kwargs):
@@ -329,6 +302,19 @@ class Webhook:
             response = self.sorry()
 
         return response
+
+    @cherrypy.expose
+    @cherrypy.tools.json_out()
+    def monitor(self):
+        cherrypy.response.headers['Content-Type'] = "application/json"
+        cherrypy.response.headers['Connection'] = "close"
+        cherrypy.response.status = 200
+        thread_id = id_generator()
+        response_json = {
+            "containerId": socket.gethostname(),
+            "threadId": thread_id
+        }
+        return response_json
 
 
 if __name__ == "__main__":

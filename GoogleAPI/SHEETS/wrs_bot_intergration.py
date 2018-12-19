@@ -51,15 +51,20 @@ class bot(object):
                     wrs_access_token = r.json()[bot.ACCESS_TOKEN_PARAMETER]
 
                     r = requests.get(
-                        "http://dev-services.agilestructure.in/api/v1/employees.json",
+                        "http://dev-accounts.agilestructure.in/sessions/user_info.json",
                         headers={"Authorization": wrs_access_token},
-                        params={"per": 1,
-                                "page": 1,
-                                "query": "Keshav"})
+                        params={})
+                    r = r.json()
+                    r = requests.get(
+                        "http://dev-services.agilestructure.in/api/v1/employees/{}.json".
+                        format(r['user_uuid']),
+                        headers={"Authorization": wrs_access_token},
+                        params={"id": r["user_uuid"]})
+                    r = r.json()
                     response_data = {
                         "wrs_client_code": wrs_client_code,
                         "wrs_access_token": wrs_access_token,
-                        "employee": r.json()
+                        "employee": r
                     }
                 except Exception as e:
                     response_data = {
@@ -98,11 +103,16 @@ class bot(object):
 
         if email:
             r = requests.get(
-                "http://dev-accounts.agilestructure.in/sessions/new?&response_type=code",
+                "http://dev-accounts.agilestructure.in/sessions/new",
                 params={
                     bot.EMAIL_PARAMETER: email,
                     bot.CLIENT_ID_PARAMETER: bot.CLIENT_ID,
                     "response_type": bot.CODE_PARAMETER
+                },
+                headers={
+                    'User-Agent':
+                    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.96 Safari/537.36',
+                    "accept-language": "*"
                 })
             return r.json()
         else:

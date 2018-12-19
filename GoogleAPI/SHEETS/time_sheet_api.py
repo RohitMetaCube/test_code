@@ -13,12 +13,11 @@ class TimeSheetAPI:
     MONTH_PARAMETER = config.MONTH
     YEAR_PARAMETER = config.YEAR
     SHEET_ID_PARAMETER = config.SPREADSHEET_ID
-    USERS_PARAMETER = config.USERS_LIST
-    USERNAME_PARAMETER = config.NAME
+    USERS_PARAMETER = "users"
+    USERNAME_PARAMETER = config.WRS_NAME
     USER_EMAIL_PARAMETER = config.EMAIL
-    USER_ID_PARAMETER = config.EMPLOYEE_ID
+    USER_ID_PARAMETER = config.WRS_EMPLOYEE_ID
     PROJECT_NAME_PARAMETER = config.PROJECT_NAME
-    ADMIN_EMAIL_PARAMETER = config.ADMIN_EMAIL
     MARKING_TYPE_PARAMETER = "markingType"
     MARKING_DATES_PARAMETER = "markingDates"
     MARKING_SHEET_NAME_PARAMETER = "markingSheetName"
@@ -818,7 +817,7 @@ class TimeSheetAPI:
             month, year, email=adminEmail, project=projectName)
         spreadsheet_id = spreadsheet_details[config.SPREADSHEET_ID]
         sheetIndex = int(spreadsheet_details[config.USER_SHEET_INDEX])
-        userName = spreadsheet_details[config.NAME]
+        userName = spreadsheet_details[config.WRS_NAME]
         response_object = {}
         if not spreadsheet_id:
             error_message = "Missing Required parameters {} AND ({} OR {})".format(
