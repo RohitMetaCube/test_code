@@ -24,6 +24,7 @@ class bot(object):
     EMAIL_PARAMETER = "email"
 
     def __init__(self):
+        self.WRS_ACCESS_TOKEN = None
         root.info("API Start Time= {}s".format(time.time() -
                                                bot.api_start_time))
 
@@ -49,7 +50,7 @@ class bot(object):
 
                 try:
                     wrs_access_token = r.json()[bot.ACCESS_TOKEN_PARAMETER]
-
+                    self.WRS_ACCESS_TOKEN = wrs_access_token
                     r = requests.get(
                         "http://dev-accounts.agilestructure.in/sessions/user_info.json",
                         headers={"Authorization": wrs_access_token},
@@ -74,21 +75,33 @@ class bot(object):
                         "error": str(e)
                     }
                 finally:
-                    # LogOut Call
-                    try:
-                        r = requests.post(
-                            "http://dev-accounts.agilestructure.in/sessions/logout.json",
-                            headers={"Authorization": wrs_access_token},
-                            json={bot.CLIENT_ID_PARAMETER: bot.CLIENT_ID})
-                        logging.info(r.json())
-                    except Exception as e:
-                        logging.info("Unable to logout from WRS ::: {}".format(
-                            e))
                     return response_data
             else:
                 return {"msg": "code parameter not returned by WRS"}
         except Exception as e:
             return {"msg": "Unusual Exception Occur"}
+
+    @cherrypy.expose
+    @cherrypy.tools.json_out()
+    def get_wrs_access_token(self):
+        return {"wrs_access_token": self.WRS_ACCESS_TOKEN}
+
+    @cherrypy.expose
+    @cherrypy.tools.json_out()
+    def logout(self):
+        # LogOut Call
+        response = {}
+        try:
+            r = requests.post(
+                "http://dev-accounts.agilestructure.in/sessions/logout.json",
+                headers={"Authorization": self.WRS_ACCESS_TOKEN},
+                json={bot.CLIENT_ID_PARAMETER: bot.CLIENT_ID})
+            response.update(r.json())
+        except Exception as e:
+            response.update({
+                "error": "Unable to logout from WRS ::: {}".format(e)
+            })
+        return response
 
     @cherrypy.expose
     @cherrypy.tools.json_in()

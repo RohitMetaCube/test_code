@@ -43,73 +43,18 @@
 <H2>SAMPLE REQUEST AND RESPONSES</H2>
 <br>
 <br>
-<h4>ADD USER BY ADMIN(required authenticated Admin account)</h4><br>
-<br>
-<b>URL:</b> http://localhost:5000/webhook
-<br>
-<b>Request:</b>
-<i>{
-      "queryResult":{
-      "intent":{"displayName":"Add User - custom - custom"},
-      "outputContexts":[
-        {
-          "parameters":{
-              "projectName":"Xxxxx",
-              "adminEmail": "xxxxxxxxx@gmail.com",          
-              "name":"Rohit Kumar", 
-              "email":"xxxx.xxx@xxxxxxxx.xxxx",
-              "employeeID":"Xdd/dddd",
-	      	  "month":12,
-              "year":2018      
-          }
-       }]
-    }
-}</i>
-<br>
-<b>Response:</b><br>
-<i>{
-"fulfillmentText": "Cheers! User added successfully."
-}</i><br><br>
-
-<h4>REMOVE USER BY ADMIN(required authenticated Admin account)</h4><br>
-<br>
-<b>URL:</b> http://localhost:5000/webhook
-<br>
-<b>Request:</b>
-<i>{
-      "queryResult":{
-      "intent":{"displayName":"Remove User - custom - custom"},
-      "outputContexts":[
-        {
-          "parameters":{
-              "projectName":"Xxxxx",
-              "adminEmail": "xxxxxxxxx@gmail.com",          
-              "email":"xxxx.xxx@xxxxxxxx.xxxx",
-              "employeeID":"Xdd/dddd"
-          }
-       }]
-    }
-}</i>
-<br>
-<b>Response:</b><br>
-<i>{
-"fulfillmentText": "Removed user with email xxxxxxxxx@xxxx.com, employeeID Xdd/dddd from project "Xxxxx""
-}</i><br><br>
-
-
 <h4>CREATE API</h4><br>
 <br>
-<b>URL:</b> http://localhost:5000/webhook
+<b>URL:</b> http://localhost:8080/wrs/webhook
 <br>
 <b>Request:</b>
 <i>{
       "queryResult":{
-      "intent":{"displayName":"Create Projects Sheets - custom - custom"},
+      "intent":{"displayName":"Create Projects Sheets"},
       "outputContexts":[
         {
           "parameters":{
-              "projectName": ["Xxxxxx", "Xxxxx Xxxxxx"],
-              "adminEmail": "xxxxxxxxx@gmail.com",          
+              "projectName": "Xxxxxx",
               "month":12,
           	  "year":2018
           }
@@ -124,25 +69,26 @@
 
 <h4>ADD WORK LOG (by User)</h4><br>
 <br>
-<b>URL:</b> http://localhost:5000/webhook
+<b>URL:</b> http://localhost:8080/wrs/webhook
 <br>
 <b>Request:</b><br>
 <i>{
   "queryResult": {
     "intent": {
       "displayName": "Add Work Log"
-    }
-  },
-  "parameters": {
-    "month": 12,
-    "year": 2018,
-    "workingDate":3,
-    "workingHours":3.5,
-    "adminEmailAddr": "xxxxxddd@xxxx.xxx",
-    "userEmailAddr":"xxxdddxxx@xxxxx.xxx",
-    "workDetails":"Worked on time sheet api building",
-    "jiraTicketNumber":"DN-1967",
-    "isSpecialWorking":true
+    },
+  	"outputContexts":[{
+	  "parameters": {
+	    "month": 12,
+	    "year": 2018,
+	    "workingDate":3,
+	    "workingHours":3.5,
+	    "workDetails":"Worked on time sheet api building",
+	    "jiraTicketNumber":"DN-1967",
+	    "isSpecialWorking":true,
+	    "projectName":"Xxxx"
+	  }
+	}]
   }
 }</i><br><br>
 
@@ -160,7 +106,7 @@
 
 <h4>MARK SPECIAL ENTRY API</h4><br><br>
 
-<b>URL:</b> http://localhost:5000/webhook
+<b>URL:</b> http://localhost:8080/wrs/webhook
 <br>
 <b>Request 1 (LEAVE):</b><br>
 <i>{
@@ -173,10 +119,9 @@
             "parameters": {
               "month": 11,
               "year": 2018,
-              "adminEmail": "xxxdddxxx@xxx.xxx",
+              "projectName": "Xxxxx",
               "markingType":"leave",
               "markingDates":[5,6],
-              "email":"xxxxxxxxx@xxxxx.xxx",
               "workDetails":"Diwali Leave"
             }
 	}]
@@ -194,10 +139,9 @@
             "parameters": {
               "month": 11,
               "year": 2018,
-              "adminEmail": "xxxdddxxx@xxx.xxx",
+              "projectName": "Xxxxx",
               "markingType":"holiday",
               "markingDates":[7,8,9,10],
-              "email":"xxxxxxxxx@xxxxx.xxx",
               "workDetails":"Diwali Holiday"
             }
 	}]
@@ -215,10 +159,9 @@
             "parameters": {
               "month": 11,
               "year": 2018,
-              "adminEmail": "xxxdddxxx@xxx.xxx",
+              "projectName": "Xxxxx",
               "markingType":"working",
-              "markingDates":[3,24],
-              "email":"xxxxxxxxx@xxxxx.xxx"
+              "markingDates":[3,24]
             }
 	}]
   }

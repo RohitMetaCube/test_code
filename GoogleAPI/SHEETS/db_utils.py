@@ -11,13 +11,16 @@ class mongoDB:
         self.ensure_indexes(
             config.SHEETS_COLLECTION,
             index_list=[
-                config.SPREADSHEET_ID,
-                [config.EMAIL, config.MONTH, config.YEAR, config.PROJECT_NAME]
+                config.SPREADSHEET_ID, [
+                    config.WRS_EMAIL, config.MONTH, config.YEAR,
+                    config.WRS_PROJECT_NAME
+                ]
             ])
         self.ensure_indexes(
             config.LOGS_COLLECTION,
             index_list=[
-                config.SPREADSHEET_ID, config.EMAIL, config.MANAGER_EMAIL
+                config.SPREADSHEET_ID,
+                config.WRS_EMAIL,
             ])
 
     def ensure_indexes(self, collection_name, index_list=[]):
@@ -87,16 +90,15 @@ class mongoDB:
                                        month=None,
                                        year=None,
                                        email=None,
-                                       project=None):
+                                       project_name=None):
         spreadsheet_id = None
         user_sheet_index = None
         user_name = None
         if month and year and email:
             elem = self.db[config.SHEETS_COLLECTION].find_one({
-                config.EMAIL: email,
                 config.YEAR: year,
                 config.MONTH: month,
-                config.PROJECT_NAME: project
+                config.WRS_PROJECT_NAME: project_name
             }, {config.SPREADSHEET_ID: 1,
                 config.WRS_NAME: 1})
             if elem:
@@ -104,7 +106,7 @@ class mongoDB:
                 user_name = elem[config.WRS_NAME]
                 elem2 = self.db[config.LOGS_COLLECTION].find_one({
                     config.SPREADSHEET_ID: spreadsheet_id,
-                    config.EMAIL: email
+                    config.WRS_EMAIL: email
                 }, {config.USER_SHEET_INDEX: 1})
                 if elem2:
                     user_sheet_index = elem2[config.USER_SHEET_INDEX]
@@ -123,8 +125,10 @@ class mongoDB:
                      jira=None):
         self.update_data(
             config.LOGS_COLLECTION,
-            query={config.SPREADSHEET_ID: spreadsheet_id,
-                   config.EMAIL: email},
+            query={
+                config.SPREADSHEET_ID: spreadsheet_id,
+                config.WRS_EMAIL: email
+            },
             update_dict={
                 "$push": {
                     "{}.{}.{}".format(config.WORK_DETAILS, date,
@@ -139,12 +143,26 @@ class mongoDB:
             upsert=False,
             multi=False)
 
+    def get_existing_work_logs(self, spreadsheet_id, email, date):
+        work_logs_field = "{}.{}.{}".format(config.WORK_DETAILS, date,
+                                            config.TASK_DETAILS)
+        return self.fetch_data(
+            config.LOGS_COLLECTION,
+            'cursor',
+            query={
+                config.SPREADSHEET_ID: spreadsheet_id,
+                config.WRS_EMAIL: email
+            },
+            projection_list={work_logs_field: 1})[0][work_logs_field]
+
     def add_leave(self, spreadsheet_id, email, date, ltype=None,
                   lpurpose=None):
         self.update_data(
             config.LOGS_COLLECTION,
-            query={config.SPREADSHEET_ID: spreadsheet_id,
-                   config.EMAIL: email},
+            query={
+                config.SPREADSHEET_ID: spreadsheet_id,
+                config.WRS_EMAIL: email
+            },
             update_dict={
                 "$push": {
                     "{}.{}".format(config.USER_LEAVES, date): {
@@ -165,8 +183,10 @@ class mongoDB:
                 wfhpurpose=None):
         self.update_data(
             config.LOGS_COLLECTION,
-            query={config.SPREADSHEET_ID: spreadsheet_id,
-                   config.EMAIL: email},
+            query={
+                config.SPREADSHEET_ID: spreadsheet_id,
+                config.WRS_EMAIL: email
+            },
             update_dict={
                 "$push": {
                     "{}.{}".format(config.WORK_FROM_HOME, date): {
@@ -179,13 +199,12 @@ class mongoDB:
             upsert=False,
             multi=False)
 
-    def mark_special_working(self, spreadsheet_id, email, manager_email, date):
+    def mark_special_working(self, spreadsheet_id, email, date):
         self.update_data(
             config.LOGS_COLLECTION,
             query={
                 config.SPREADSHEET_ID: spreadsheet_id,
-                config.MANAGER_EMAIL: manager_email,
-                config.EMAIL: email
+                config.WRS_EMAIL: email
             },
             update_dict={
                 "$set": {
@@ -196,13 +215,12 @@ class mongoDB:
             upsert=False,
             multi=False)
 
-    def approve_leave(self, spreadsheet_id, email, manager_email, date):
+    def approve_leave(self, spreadsheet_id, email, date):
         self.update_data(
             config.LOGS_COLLECTION,
             query={
                 config.SPREADSHEET_ID: spreadsheet_id,
-                config.MANAGER_EMAIL: manager_email,
-                config.EMAIL: email
+                config.WRS_EMAIL: email
             },
             update_dict={
                 "$set": {
@@ -213,13 +231,12 @@ class mongoDB:
             upsert=False,
             multi=False)
 
-    def approve_wfh(self, spreadsheet_id, email, manager_email, date):
+    def approve_wfh(self, spreadsheet_id, email, date):
         self.update_data(
             config.LOGS_COLLECTION,
             query={
                 config.SPREADSHEET_ID: spreadsheet_id,
-                config.MANAGER_EMAIL: manager_email,
-                config.EMAIL: email
+                config.WRS_EMAIL: email
             },
             update_dict={
                 "$set": {
@@ -234,12 +251,12 @@ class mongoDB:
                            users):
         self.db[config.SHEETS_COLLECTION].insert({
             config.SPREADSHEET_ID: spreadsheet_id,
-            config.EMAIL: manager[config.WRS_EMAIL],
-            config.USER_ID: manager[config.WRS_USER_ID],
-            config.USER_UUID: manager[config.WRS_USER_UUID],
+            config.WRS_EMAIL: manager[config.WRS_EMAIL],
+            config.WRS_USER_ID: manager[config.WRS_USER_ID],
+            config.WRS_USER_UUID: manager[config.WRS_USER_UUID],
             config.YEAR: year,
             config.MONTH: month,
-            config.PROJECT_NAME: project[config.WRS_PROJECT_NAME],
+            config.WRS_PROJECT_NAME: project[config.WRS_PROJECT_NAME],
             config.WRS_PROJECT_ID: project[config.WRS_PROJECT_ID],
             config.WRS_PROJECT_UUID: project[config.WRS_PROJECT_UUID]
         })
@@ -247,12 +264,13 @@ class mongoDB:
             self.db[config.LOGS_COLLECTION].insert({
                 config.SPREADSHEET_ID: spreadsheet_id,
                 config.USER_SHEET_INDEX: i + 1,
-                config.MANAGER_EMAIL: manager[config.WRS_EMAIL],
-                config.EMAIL: user[config.WRS_EMAIL],
-                config.USER_ID: user[config.WRS_USER_ID],
-                config.USER_UUID: user[config.WRS_USER_UUID],
-                config.WRS_EMPLOYEE_ID: user[config.WRS_EMPLOYEE_ID],
-                config.WRS_NAME: user[config.WRS_NAME],
+                config.WRS_EMAIL: user[config.WRS_EMAIL],
+                config.WRS_USER_ID: user[config.WRS_USER_ID],
+                config.WRS_USER_UUID: user[config.WRS_USER_UUID],
+                config.WRS_EMPLOYEE_ID: user[config.WRS_EMPLOYEE_ID]
+                if config.WRS_EMPLOYEE_ID in user else None,
+                config.WRS_NAME: user[config.WRS_NAME]
+                if config.WRS_NAME in user else None,
                 config.WORK_DETAILS: {},
                 config.WORK_FROM_HOME: {},
                 config.USER_LEAVES: {}

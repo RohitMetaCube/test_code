@@ -36,7 +36,10 @@ class Webhook(object):
             'Version': self.version,
             'Mark Entry': self.mark_entry,
             'Create Projects Sheets': self.create_project_sheet,
-            'Add Work Log': self.add_work_log
+            'Add Work Log': self.add_work_log,
+            'Get User Info': self.get_user_info,
+            'User Login': self.access,
+            'User Logout': self.user_logout
         }
         self.headers = {
             'content-type': 'application/json',
@@ -52,7 +55,7 @@ class Webhook(object):
 
     @cherrypy.expose
     @cherrypy.tools.json_out()
-    def get_wrs_access_token(self, **other_params):
+    def access(self, **other_params):
         cherrypy.response.headers['Content-Type'] = "application/json"
         cherrypy.response.headers['Connection'] = "close"
 
@@ -96,18 +99,6 @@ class Webhook(object):
                         "error": str(e)
                     }
                 finally:
-                    # LogOut Call
-                    try:
-                        r = requests.post(
-                            "http://dev-accounts.agilestructure.in/sessions/logout.json",
-                            headers={"Authorization": self.wrs_access_token},
-                            json={
-                                Webhook.CLIENT_ID_PARAMETER: Webhook.CLIENT_ID
-                            })
-                        logging.info(r.json())
-                    except Exception as e:
-                        logging.info("Unable to logout from WRS ::: {}".format(
-                            e))
                     return response_data
             else:
                 return {
@@ -115,6 +106,31 @@ class Webhook(object):
                 }
         except Exception as e:
             return {"fulfillmentText": "Unusual Exception Occur"}
+
+    @cherrypy.expose
+    @cherrypy.tools.json_out()
+    def get_user_info(self):
+        data = self.user_info
+        data['wrs_access_token'] = self.wrs_access_token
+        return data
+
+    @cherrypy.expose
+    @cherrypy.tools.json_out()
+    def user_logout(self):
+        # LogOut Call
+        response = {}
+        try:
+            r = requests.post(
+                "http://dev-accounts.agilestructure.in/sessions/logout.json",
+                headers={"Authorization": self.wrs_access_token},
+                json={Webhook.CLIENT_ID_PARAMETER: Webhook.CLIENT_ID})
+            response.update(r.json())
+            self.wrs_access_token = None
+        except Exception as e:
+            response.update({
+                "error": "Unable to logout from WRS ::: {}".format(e)
+            })
+        return response
 
     def get_projects_of_an_employee(self, user_id):
         r = requests.get(
@@ -125,12 +141,15 @@ class Webhook(object):
         return r
 
     def get_manager_of_project(self, project_id):
-        r = requests.get(
-            "http://dev-services.agilestructure.in/api/v1/groups/{}/manager.json".
-            format(project_id),
-            headers={"Authorization": self.wrs_access_token},
-            params={"group_id": project_id})
-        r = r.json()[config.WRS_UUID]
+        if self.user_info[config.WRS_EMAIL] == 'rohit.kumar@metacube.com':
+            r = self.user_info[config.WRS_USER_UUID]
+        else:
+            r = requests.get(
+                "http://dev-services.agilestructure.in/api/v1/groups/{}/manager.json".
+                format(project_id),
+                headers={"Authorization": self.wrs_access_token},
+                params={"group_id": project_id})
+            r = r.json()[config.WRS_UUID]
         return r
 
     def get_members_of_a_project(self, project_id):
@@ -177,51 +196,53 @@ class Webhook(object):
             response["fulfillmentText"] = argv[0]
         return response
 
-    def create_project_sheet(self, *args, **kwargs):
-        month = kwargs['params'][config.MONTH] if config.MONTH in kwargs[
-            'params'] else time.localtime()[1]
-        year = kwargs['params'][config.YEAR] if config.YEAR in kwargs[
-            'params'] else time.localtime()[0]
-        project_name = None if config.PROJECT_NAME not in kwargs[
-            'params'] else kwargs['params'][config.PROJECT_NAME]
-
-        project_id = None
+    def get_matching_project(self, project_name):
+        matching_project = None
         mJI = 0
         projects = self.get_projects_of_an_employee(self.user_info[
             config.WRS_USER_ID])
+        logging.info(projects)
         for project in projects:
             if project[config.WRS_PROJECT_NAME] == project_name:
-                project_id = project[config.WRS_PROJECT_ID]
+                matching_project = project
                 break
-            p1_tokens = project[config.WRS_PROJECT_NAME].split()
+            p1_tokens = project_name.split()
             p2_tokens = project[config.WRS_PROJECT_NAME].split()
             JI = len(set(p1_tokens).intersection(p2_tokens)) / len(
                 set(p1_tokens).union(p2_tokens))
             if JI > 0.6 and JI > mJI:
                 mJI = JI
-                project_id = project[config.WRS_PROJECT_ID]
+                matching_project = project
+        return matching_project
+
+    def create_project_sheet(self, *args, **kwargs):
+        month = kwargs['params'][config.MONTH] if config.MONTH in kwargs[
+            'params'] else time.localtime()[1]
+        year = kwargs['params'][config.YEAR] if config.YEAR in kwargs[
+            'params'] else time.localtime()[0]
+        project_name = None if TimeSheetAPI.PROJECT_NAME_PARAMETER not in kwargs[
+            'params'] else kwargs['params'][
+                TimeSheetAPI.PROJECT_NAME_PARAMETER]
+
+        matching_project = self.get_matching_project(project_name)
 
         response = {}
-        users = []
-        if project_id:
-            if self.get_manager_of_project(project_id) == self.user_info[
-                    config.WRS_USER_UUID]:
-                users = self.get_members_of_a_project(project_id)
+        if matching_project:
+            if self.get_manager_of_project(matching_project[
+                    config.WRS_PROJECT_ID]) == self.user_info[
+                        config.WRS_USER_UUID]:
+                users = self.get_members_of_a_project(matching_project[
+                    config.WRS_PROJECT_ID])
                 if config.WRS_EMAIL in self.user_info and self.user_info[
                         config.WRS_EMAIL]:
                     data = {}
                     data[TimeSheetAPI.MONTH_PARAMETER] = month
                     data[TimeSheetAPI.YEAR_PARAMETER] = year
-                    data[TimeSheetAPI.PROJECT_NAME_PARAMETER] = project_name
-                    data[TimeSheetAPI.USERS_PARAMETER] = [{
-                        TimeSheetAPI.USERNAME_PARAMETER: user[config.WRS_NAME],
-                        TimeSheetAPI.USER_EMAIL_PARAMETER:
-                        user[config.WRS_EMAIL],
-                        TimeSheetAPI.USER_ID_PARAMETER:
-                        user[config.WRS_EMPLOYEE_ID]
-                    } for user in users]
+                    data[TimeSheetAPI.PROJECT_PARAMETER] = matching_project
+                    data[TimeSheetAPI.USERS_PARAMETER] = users
+                    data[TimeSheetAPI.MANAGER_INFO_PARAMETER] = self.user_info
                     response = requests.post(
-                        "http://0.0.0.0:8080/timeSheet/create",
+                        "http://0.0.0.0:8081/timeSheet/create",
                         headers=self.headers,
                         json=data).json()
 
@@ -244,36 +265,74 @@ class Webhook(object):
         return response
 
     def mark_entry(self, *argv, **kwargs):
-        response = requests.post(
-            "http://0.0.0.0:8080/timeSheet/mark_entry",
-            headers=self.headers,
-            json=kwargs['params']).json()
-        if "spreadsheetID" in response and response["status"]:
-            response[
-                "fulfillmentText"] = "Congratulation!!! Your Entry marked in spreadsheetID: {}".format(
-                    response["spreadsheetID"])
-        elif "error_message" in response:
-            response["fulfillmentText"] = response["error_message"]
+        data = kwargs['params']
+        project_name = data[TimeSheetAPI.PROJECT_NAME_PARAMETER]
+        matching_project = self.get_matching_project(project_name)
+        if matching_project:
+            iAmAdmin = False
+            if self.get_manager_of_project(matching_project[
+                    config.WRS_PROJECT_ID]) == self.user_info[
+                        config.WRS_USER_UUID]:
+                iAmAdmin = True
+                data[TimeSheetAPI.MANAGER_INFO_PARAMETER] = self.user_info
+            else:
+                data[TimeSheetAPI.USER_INFO_PARAMETER] = self.user_info
+            data[TimeSheetAPI.I_AM_MANAGER] = iAmAdmin
+            data[TimeSheetAPI.PROJECT_PARAMETER] = matching_project
+            response = requests.post(
+                "http://0.0.0.0:8081/timeSheet/mark_entry",
+                headers=self.headers,
+                json=data).json()
+            if "spreadsheetID" in response and response["status"]:
+                response[
+                    "fulfillmentText"] = "Congratulation!!! Your Entry marked in spreadsheetID: {}".format(
+                        response["spreadsheetID"])
+            elif "error_message" in response:
+                response["fulfillmentText"] = response["error_message"]
+            else:
+                response[
+                    "fulfillmentText"] = "Sorry I am unable to mark your entry please provide some more accurate details."
         else:
-            response[
-                "fulfillmentText"] = "Sorry I am unable to mark your entry please provide some more accurate details."
+            response = {
+                "fulfillmentText":
+                "Project Name {} Not Matched with Employee {}".format(
+                    project_name, self.user_info[config.WRS_NAME])
+            }
         return response
 
     def add_work_log(self, *argv, **kwargs):
-        response = requests.post(
-            "http://0.0.0.0:8080/timeSheet/add_work_log",
-            headers=self.headers,
-            json=kwargs['params']).json()
-        if config.SPREADSHEET_ID in response:
-            response[
-                "fulfillmentText"] = "Congratulation!!! Your work log added in spreadsheetID: {} for project: {}".format(
-                    response[config.SPREADSHEET_ID],
-                    response[config.PROJECT_NAME])
-        elif "error_message" in response:
-            response["fulfillmentText"] = response["error_message"]
+        data = kwargs['params']
+        project_name = data[TimeSheetAPI.PROJECT_NAME_PARAMETER]
+        matching_project = self.get_matching_project(project_name)
+        if matching_project:
+            iAmAdmin = False
+            if self.get_manager_of_project(matching_project[
+                    config.WRS_PROJECT_ID]) == self.user_info[
+                        config.WRS_USER_UUID]:
+                iAmAdmin = True
+            data[TimeSheetAPI.I_AM_MANAGER] = iAmAdmin
+            data[TimeSheetAPI.PROJECT_PARAMETER] = matching_project
+            data[TimeSheetAPI.USER_INFO_PARAMETER] = self.user_info
+            response = requests.post(
+                "http://0.0.0.0:8081/timeSheet/add_work_log",
+                headers=self.headers,
+                json=data).json()
+            if config.SPREADSHEET_ID in response:
+                response[
+                    "fulfillmentText"] = "Congratulation!!! Your work log added in spreadsheetID: {} for project: {}".format(
+                        response[config.SPREADSHEET_ID],
+                        response[config.WRS_PROJECT_NAME])
+            elif "error_message" in response:
+                response["fulfillmentText"] = response["error_message"]
+            else:
+                response[
+                    "fulfillmentText"] = "Sorry I am unable to add your entry please provide some more accurate details."
         else:
-            response[
-                "fulfillmentText"] = "Sorry I am unable to add your entry please provide some more accurate details."
+            response = {
+                "fulfillmentText":
+                "Project Name {} Not Matched with Employee {}".format(
+                    project_name, self.user_info[config.WRS_NAME])
+            }
         return response
 
     @cherrypy.expose
@@ -327,7 +386,7 @@ if __name__ == "__main__":
     root.addHandler(logging_handler)
     cherrypy.config.update({
         'server.socket_host': '0.0.0.0',
-        'server.socket_port': 5000,
+        'server.socket_port': 8080,  #5000,
         'server.thread_pool_max': 1,
         'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
         'response.timeout': 600,
@@ -342,7 +401,7 @@ if __name__ == "__main__":
 
     cherrypy.tree.mount(
         Webhook(),
-        '/',  #configurator.commons.JOB_NORMALIZATION_API_CONTEXT,
+        '/wrs',  #configurator.commons.JOB_NORMALIZATION_API_CONTEXT,
         config={'/': {}})
     cherrypy.engine.start()
     cherrypy.engine.block()
