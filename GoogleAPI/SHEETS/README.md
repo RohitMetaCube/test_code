@@ -29,13 +29,13 @@
 <i>sudo python time_sheet_api.py --noauth_local_webserver</i><br><br>
 
 <b>Step 10:</b> <i>Test Server via heartbeat cheking</i><br>
-<i>http://localhost:8080/heartbeat</i> <br><br>
+<i>http://localhost:8081/heartbeat</i> <br><br>
 <br>
 
 <H2>YOU CAN USE OUR TIMESHEET API:</H2><br><br>
-<b>Heartbeat Request:</b> <b><i>GET/POST</i></b> http://35.190.168.196:8080/heartbeat <br>
-<b>Create Request:</b> <i><b>POST</i></b> http://35.190.168.196:8080/timeSheet/create <br>
-<b>Mark Entry Request:</b> <i><b>POST</i></b> http://35.190.168.196:8080/timeSheet/mark_entry <br>
+<b>Heartbeat Request:</b> <b><i>GET/POST</i></b> http://35.190.168.196:8081/heartbeat <br>
+<b>Create Request:</b> <i><b>POST</i></b> http://35.190.168.196:8081/timeSheet/create <br>
+<b>Mark Entry Request:</b> <i><b>POST</i></b> http://35.190.168.196:8081/timeSheet/mark_entry <br>
 <br>
 <br>
 
@@ -43,12 +43,53 @@
 <H2>SAMPLE REQUEST AND RESPONSES</H2>
 <br>
 <br>
+<h4>USER LOGIN</h4><br>
+<br>
+<b>URL:</b> http://localhost:8080/wrs/webhook
+<br>
+<b>Request:</b>
+<i>{
+	  "session": "A_Unique_Session_Id",
+      "queryResult":{
+      "intent":{"displayName":"User Login"},
+      "outputContexts":[
+        {
+          "parameters":{
+              "email": "Xxxxxx@xxxx.xxx"
+          }
+       }]
+    }
+}</i>
+<br>
+<b>Response:</b><br>
+<i>{
+"fulfillmentText": "Logged in Successfully. How can I help you?"
+}</i><br><br>
+
+<h4>GET USER INFO</h4><br>
+<br>
+<b>URL:</b> http://localhost:8080/wrs/webhook
+<br>
+<b>Request:</b>
+<i>{
+	  "session": "A_Unique_Session_Id",
+      "queryResult":{
+      		"intent":{"displayName":"Get User Info"},
+       }
+}</i>
+<br>
+<b>Response:</b><br>
+<i>{
+"fulfillmentText": "name: Xxxxx, id: DDDD, uuid: XxDDD-XXDDxxX-DDDxxxxX, email: xxxxx@xxxx.xxx, access_token: XxDDD-XXDDxxX-DDDxxxxX"
+}</i><br><br>
+
 <h4>CREATE API</h4><br>
 <br>
 <b>URL:</b> http://localhost:8080/wrs/webhook
 <br>
 <b>Request:</b>
 <i>{
+	  "session": "A_Unique_Session_Id",
       "queryResult":{
       "intent":{"displayName":"Create Projects Sheets"},
       "outputContexts":[
@@ -73,6 +114,7 @@
 <br>
 <b>Request:</b><br>
 <i>{
+  "session": "A_Unique_Session_Id",
   "queryResult": {
     "intent": {
       "displayName": "Add Work Log"
@@ -110,6 +152,7 @@
 <br>
 <b>Request 1 (LEAVE):</b><br>
 <i>{
+  "session": "A_Unique_Session_Id",
   "queryResult": {
     "intent": {
       "displayName": "Mark Entry"
@@ -130,6 +173,7 @@
 
 <b>Request 2 (HOLIDAY):</b><br>
 <i>{
+  "session": "A_Unique_Session_Id",
   "queryResult": {
     "intent": {
       "displayName": "Mark Entry"
@@ -150,6 +194,7 @@
 
 <b>Request 3 (WORKING):</b><br>
 <i>{
+  "session": "A_Unique_Session_Id",
   "queryResult": {
     "intent": {
       "displayName": "Mark Entry"

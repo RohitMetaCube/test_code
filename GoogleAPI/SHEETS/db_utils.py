@@ -144,16 +144,25 @@ class mongoDB:
             multi=False)
 
     def get_existing_work_logs(self, spreadsheet_id, email, date):
-        work_logs_field = "{}.{}.{}".format(config.WORK_DETAILS, date,
-                                            config.TASK_DETAILS)
-        return self.fetch_data(
-            config.LOGS_COLLECTION,
-            'cursor',
-            query={
-                config.SPREADSHEET_ID: spreadsheet_id,
-                config.WRS_EMAIL: email
-            },
-            projection_list={work_logs_field: 1})[0][work_logs_field]
+        work_details = []
+        if date:
+            date = str(date)
+            work_logs_field = "{}.{}.{}".format(config.WORK_DETAILS, date,
+                                                config.TASK_DETAILS)
+            elem = self.fetch_data(
+                config.LOGS_COLLECTION,
+                'cursor',
+                query={
+                    config.SPREADSHEET_ID: spreadsheet_id,
+                    config.WRS_EMAIL: email
+                },
+                projection_list={work_logs_field: 1})[0]
+            if config.WORK_DETAILS in elem:
+                if date in elem[config.WORK_DETAILS]:
+                    if config.TASK_DETAILS in elem[config.WORK_DETAILS][date]:
+                        work_details = elem[config.WORK_DETAILS][date][
+                            config.TASK_DETAILS]
+        return work_details
 
     def add_leave(self, spreadsheet_id, email, date, ltype=None,
                   lpurpose=None):
@@ -252,8 +261,12 @@ class mongoDB:
         self.db[config.SHEETS_COLLECTION].insert({
             config.SPREADSHEET_ID: spreadsheet_id,
             config.WRS_EMAIL: manager[config.WRS_EMAIL],
-            config.WRS_USER_ID: manager[config.WRS_USER_ID],
-            config.WRS_USER_UUID: manager[config.WRS_USER_UUID],
+            config.WRS_ID: manager[config.WRS_USER_ID],
+            config.WRS_UUID: manager[config.WRS_USER_UUID],
+            config.WRS_EMPLOYEE_ID: manager[config.WRS_EMPLOYEE_ID]
+            if config.WRS_EMPLOYEE_ID in manager else None,
+            config.WRS_NAME: manager[config.WRS_USER_NAME]
+            if config.WRS_USER_NAME in manager else None,
             config.YEAR: year,
             config.MONTH: month,
             config.WRS_PROJECT_NAME: project[config.WRS_PROJECT_NAME],
@@ -265,8 +278,8 @@ class mongoDB:
                 config.SPREADSHEET_ID: spreadsheet_id,
                 config.USER_SHEET_INDEX: i + 1,
                 config.WRS_EMAIL: user[config.WRS_EMAIL],
-                config.WRS_USER_ID: user[config.WRS_USER_ID],
-                config.WRS_USER_UUID: user[config.WRS_USER_UUID],
+                config.WRS_ID: user[config.WRS_ID],
+                config.WRS_UUID: user[config.WRS_UUID],
                 config.WRS_EMPLOYEE_ID: user[config.WRS_EMPLOYEE_ID]
                 if config.WRS_EMPLOYEE_ID in user else None,
                 config.WRS_NAME: user[config.WRS_NAME]

@@ -100,7 +100,7 @@ class GoogleSheetHandler():
                 # https://developers.google.com/drive/v3/reference/permissions#resource-representations
                 domain_permission = {
                     'type': 'user',
-                    'role': 'writer',
+                    'role': 'reader',
                     'emailAddress': emailAddr
                 }
 

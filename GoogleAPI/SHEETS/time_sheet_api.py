@@ -12,7 +12,6 @@ import config
 class TimeSheetAPI:
     MONTH_PARAMETER = config.MONTH
     YEAR_PARAMETER = config.YEAR
-    SHEET_ID_PARAMETER = config.SPREADSHEET_ID
     I_AM_MANAGER = "iAmManager"
     MANAGER_INFO_PARAMETER = "managerInfo"
     USER_INFO_PARAMETER = "userInfo"
@@ -21,17 +20,15 @@ class TimeSheetAPI:
     PROJECT_NAME_PARAMETER = "projectName"
     MARKING_TYPE_PARAMETER = "markingType"
     MARKING_DATES_PARAMETER = "markingDates"
-    MARKING_SHEET_NAME_PARAMETER = "markingSheetName"
-    MARKING_SHEET_INDEX_PARAMETER = config.USER_SHEET_INDEX
     LEAVE_MARKING = "leave"
     WORKDAY_MARKING = "working"
     HOLIDAY_MARKING = "holiday"
     WFH_MARKING = "wfh"
-    SPECIAL_WORKDAY_MARKING = config.SPECIAL_WORKING_FLAG
+    SPECIAL_WORKDAY_MARKING = "isSpecialWorking"
     WORK_DATE_PARAMETER = "workingDate"
-    WORKING_HOURS = config.WORKING_HOURS
-    WORK_DETAILS = config.WORK_DETAILS
-    WORK_REFERENCE_TICKET = config.JIRA_TICKET_NUMBER
+    WORKING_HOURS = "workingHours"
+    WORK_DETAILS = "workDetails"
+    WORK_REFERENCE_TICKET = "jiraTicketNumber"
 
     api_start_time = time.time()
     LOG_FORMAT_STRING = '%(asctime)s [%(levelname)s] %(message)s'
@@ -573,8 +570,8 @@ class TimeSheetAPI:
                 data_list=[[
                     "Name:  {}  -  {}".format(user[config.WRS_EMPLOYEE_ID]
                                               if config.WRS_EMPLOYEE_ID in user
-                                              else "", user[config.WRS_NAME]
-                                              if config.WRS_NAME else "")
+                                              else "", user[config.WRS_NAME] if
+                                              config.WRS_NAME in user else "")
                 ]])
             ''' Share Sheet with User '''
             self.gsh.share_google_spreadsheet(
@@ -607,16 +604,24 @@ class TimeSheetAPI:
         users = params[
             TimeSheetAPI.
             USERS_PARAMETER] if TimeSheetAPI.USERS_PARAMETER in params else []
-        spreadsheet_id = params[
-            TimeSheetAPI.
-            SHEET_ID_PARAMETER] if TimeSheetAPI.SHEET_ID_PARAMETER in params else None
         project = params[
             TimeSheetAPI.
             PROJECT_PARAMETER] if TimeSheetAPI.PROJECT_PARAMETER in params else {}
         manager_info = params[TimeSheetAPI.MANAGER_INFO_PARAMETER] if TimeSheetAPI.MANAGER_INFO_PARAMETER in params else {}
 
         users = [user for user in users if config.WRS_NAME in user]
-        users.append(manager_info)
+        manager_as_user = {
+            config.WRS_ID: manager_info[config.WRS_USER_ID],
+            config.WRS_UUID: manager_info[config.WRS_USER_UUID],
+            config.WRS_EMAIL: manager_info[config.WRS_EMAIL]
+        }
+        if config.WRS_USER_NAME in manager_info:
+            manager_as_user[config.WRS_NAME] = manager_info[
+                config.WRS_USER_NAME]
+        if config.WRS_EMPLOYEE_ID in manager_info:
+            manager_as_user[config.WRS_EMPLOYEE_ID] = manager_info[
+                config.WRS_EMPLOYEE_ID]
+        users.append(manager_as_user)
 
         sheets = [
             user[config.WRS_NAME]
@@ -629,8 +634,7 @@ class TimeSheetAPI:
                 month=month,
                 year=year,
                 sheets=sheets,
-                project_name=project[config.WRS_PROJECT_NAME],
-                spreadsheet_id=spreadsheet_id)
+                project_name=project[config.WRS_PROJECT_NAME])
             response_object = {
                 "processingTime": time.time() - total_time,
                 config.SPREADSHEET_ID: spreadsheet_id
@@ -657,9 +661,8 @@ class TimeSheetAPI:
         params = {}
         if cherrypy.request.method == "POST":
             params = cherrypy.request.json
-        error_message = "Missing Required Parameters ({} and {} and {} and {})".format(
-            TimeSheetAPI.SHEET_ID_PARAMETER,
-            TimeSheetAPI.MARKING_SHEET_INDEX_PARAMETER,
+        error_message = "Missing Required Parameters ({} and {} and {})".format(
+            TimeSheetAPI.PROJECT_NAME_PARAMETER,
             TimeSheetAPI.MARKING_TYPE_PARAMETER,
             TimeSheetAPI.MARKING_DATES_PARAMETER)
         total_time = time.time()
@@ -696,6 +699,9 @@ class TimeSheetAPI:
             TimeSheetAPI.
             I_AM_MANAGER] if TimeSheetAPI.I_AM_MANAGER in params else False
 
+        if not project or config.WRS_PROJECT_NAME not in project:
+            project[config.WRS_PROJECT_NAME] = "NOT_FOUND"
+
         spreadsheet_details = self.mongodb.fetch_spreadsheet_id_and_index(
             month,
             year,
@@ -713,9 +719,7 @@ class TimeSheetAPI:
 
         if not spreadsheet_id:
             error_message = "Unable to find Timesheet for project {}, month {} and year {}. Please Ask your Manager to create Timesheet".format(
-                project[config.WRS_PROJECT_NAME]
-                if project and config.WRS_PROJECT_NAME in project else
-                "NOT_FOUND", month, year)
+                project[config.WRS_PROJECT_NAME], month, year)
 
         if spreadsheet_id and sheetIndex != None and markingType and markingDates:
             if markingType == TimeSheetAPI.LEAVE_MARKING:
@@ -830,6 +834,9 @@ class TimeSheetAPI:
         taskDetails = "{}: {}".format(
             jiraTicketNumber, taskDetails) if jiraTicketNumber else taskDetails
 
+        if not project or config.WRS_PROJECT_NAME not in project:
+            project[config.WRS_PROJECT_NAME] = "NOT_FOUND"
+
         spreadsheet_details = self.mongodb.fetch_spreadsheet_id_and_index(
             month,
             year,
@@ -840,13 +847,13 @@ class TimeSheetAPI:
             config.USER_SHEET_INDEX]) if spreadsheet_details[
                 config.USER_SHEET_INDEX] else None
         userName = spreadsheet_details[config.WRS_NAME]
+        if not userName:
+            userName = user_info[config.WRS_EMAIL]
         response_object = {}
         error_message = None
         if not spreadsheet_id:
             error_message = "Unable to find Timesheet for project {}, month {} and year {}. Please Ask your Manager to create Timesheet".format(
-                project[config.WRS_PROJECT_NAME]
-                if project and config.WRS_PROJECT_NAME in project else
-                "NOT_FOUND", month, year)
+                project[config.WRS_PROJECT_NAME], month, year)
         elif workDate:
             number_of_days = self.compute_number_of_days(month, year)
             if workDate >= number_of_days or not number_of_days:

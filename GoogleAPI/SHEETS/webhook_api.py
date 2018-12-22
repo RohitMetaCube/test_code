@@ -12,6 +12,7 @@ import time
 import socket
 import string
 import random
+from selenium import webdriver
 
 
 def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
@@ -28,6 +29,7 @@ class Webhook(object):
     CODE_PARAMETER = 'code'
     ACCESS_TOKEN_PARAMETER = 'access_token'
     EMAIL_PARAMETER = "email"
+    DIALOGFLOW_SESSION_PARAMETER = "session"
 
     def __init__(self):
         self.intent_map = {
@@ -38,7 +40,7 @@ class Webhook(object):
             'Create Projects Sheets': self.create_project_sheet,
             'Add Work Log': self.add_work_log,
             'Get User Info': self.get_user_info,
-            'User Login': self.access,
+            'User Login': self.user_login,
             'User Logout': self.user_logout
         }
         self.headers = {
@@ -48,8 +50,11 @@ class Webhook(object):
             "accept-language": "*"
         }
         self.mongo = mongoDB()
-        self.wrs_access_token = None
-        self.user_info = {}
+        self.mongo.ensure_indexes(
+            config.ACCESS_TOKENS,
+            index_list=[
+                config.DIALOG_FLOW_SESSION_ID, config.WRS_ACCESS_TOKEN
+            ])
         root.info("API Start Time= {}s".format(time.time() -
                                                Webhook.api_start_time))
 
@@ -75,18 +80,27 @@ class Webhook(object):
                 response_data = {}
 
                 try:
-                    self.wrs_access_token = r.json()[
-                        Webhook.ACCESS_TOKEN_PARAMETER]
+                    wrs_access_token = r.json()[Webhook.ACCESS_TOKEN_PARAMETER]
 
                     r = requests.get(
                         "http://dev-accounts.agilestructure.in/sessions/user_info.json",
-                        headers={"Authorization": self.wrs_access_token},
+                        headers={"Authorization": wrs_access_token},
                         params={})
                     r = r.json()
-                    self.user_info.update(r)
+                    self.mongo.update_data(
+                        config.ACCESS_TOKENS,
+                        query={config.WRS_EMAIL: r[config.WRS_EMAIL]},
+                        update_dict={
+                            "$set": {
+                                config.WRS_USER_INFO: r,
+                                config.WRS_ACCESS_TOKEN: wrs_access_token
+                            }
+                        },
+                        upsert=False,
+                        multi=False)
                     response_data = {
                         "wrs_client_code": wrs_client_code,
-                        "wrs_access_token": self.wrs_access_token,
+                        "wrs_access_token": wrs_access_token,
                         "employee": r
                     }
                     response_data[
@@ -107,56 +121,127 @@ class Webhook(object):
         except Exception as e:
             return {"fulfillmentText": "Unusual Exception Occur"}
 
-    @cherrypy.expose
-    @cherrypy.tools.json_out()
-    def get_user_info(self):
-        data = self.user_info
-        data['wrs_access_token'] = self.wrs_access_token
-        return data
-
-    @cherrypy.expose
-    @cherrypy.tools.json_out()
-    def user_logout(self):
-        # LogOut Call
+    def user_login(self, *args, **kwargs):
+        session_id = None if Webhook.DIALOGFLOW_SESSION_PARAMETER not in kwargs[
+            'params'] else kwargs['params'][
+                Webhook.DIALOGFLOW_SESSION_PARAMETER]
+        email = None if Webhook.EMAIL_PARAMETER not in kwargs[
+            'params'] else kwargs['params'][Webhook.EMAIL_PARAMETER]
         response = {}
-        try:
-            r = requests.post(
-                "http://dev-accounts.agilestructure.in/sessions/logout.json",
-                headers={"Authorization": self.wrs_access_token},
-                json={Webhook.CLIENT_ID_PARAMETER: Webhook.CLIENT_ID})
-            response.update(r.json())
-            self.wrs_access_token = None
-        except Exception as e:
-            response.update({
-                "error": "Unable to logout from WRS ::: {}".format(e)
-            })
+        if email and session_id:
+            self.mongo.update_data(
+                config.ACCESS_TOKENS,
+                query={config.WRS_EMAIL: email},
+                update_dict={
+                    "$set": {
+                        config.DIALOG_FLOW_SESSION_ID: session_id
+                    }
+                },
+                upsert=True,
+                multi=False)
+            driver = webdriver.Chrome()
+            r = driver.get(
+                "http://dev-accounts.agilestructure.in/sessions/new?client_id={}&email={}&response_type=code".
+                format(Webhook.CLIENT_ID, email))
+            try:
+                response.update(r.json())
+                if "fulfillmentText" not in response:
+                    response[
+                        "fulfillmentText"] = "Logged in Successfully. How can I help you?"
+            except:
+                response["fulfillmentText"] = r.content
+        else:
+            response[
+                "fulfillmentText"] = "Unable to Loging (Missing Parameters <email> or <session>)"
         return response
 
-    def get_projects_of_an_employee(self, user_id):
+    def get_user_info(self, *args, **kwargs):
+        session_id = None if Webhook.DIALOGFLOW_SESSION_PARAMETER not in kwargs[
+            'params'] else kwargs['params'][
+                Webhook.DIALOGFLOW_SESSION_PARAMETER]
+        response = {}
+        elem = self.mongo.db[config.ACCESS_TOKENS].find_one({
+            config.DIALOG_FLOW_SESSION_ID: session_id
+        })
+        if elem:
+            wrs_access_token = elem[
+                config.
+                WRS_ACCESS_TOKEN] if config.WRS_ACCESS_TOKEN in elem else None
+            user_info = elem[
+                config.WRS_USER_INFO] if config.WRS_USER_INFO in elem else {}
+            response[
+                "fulfillmentText"] = "name: {}, id: {}, uuid: {}, email: {}, access_token: {}".format(
+                    user_info[config.WRS_USER_NAME]
+                    if config.WRS_USER_NAME in user_info else None,
+                    user_info[config.WRS_USER_ID]
+                    if config.WRS_USER_ID in user_info else None,
+                    user_info[config.WRS_USER_UUID]
+                    if config.WRS_USER_UUID in user_info else None,
+                    user_info[config.WRS_EMAIL] if
+                    config.WRS_EMAIL in user_info else None, wrs_access_token)
+        else:
+            response["fulfillmentText"] = "Please Login First then try."
+        return response
+
+    def user_logout(self, *args, **kwargs):
+        session_id = None if Webhook.DIALOGFLOW_SESSION_PARAMETER not in kwargs[
+            'params'] else kwargs['params'][
+                Webhook.DIALOGFLOW_SESSION_PARAMETER]
+        elem = self.mongo.db[config.ACCESS_TOKENS].find_one({
+            config.DIALOG_FLOW_SESSION_ID: session_id
+        }, {config.WRS_ACCESS_TOKEN: 1})
+        wrs_access_token = elem[config.WRS_ACCESS_TOKEN] if elem else None
+
+        response = {}
+        if wrs_access_token:
+            # Remove Session Details from DB
+            self.mongo.db[config.ACCESS_TOKENS].remove({
+                config.WRS_ACCESS_TOKEN: wrs_access_token
+            })
+
+            # LogOut Call
+            try:
+                r = requests.post(
+                    "http://dev-accounts.agilestructure.in/sessions/logout.json",
+                    headers={"Authorization": wrs_access_token},
+                    json={Webhook.CLIENT_ID_PARAMETER: Webhook.CLIENT_ID})
+                r = r.json()
+                response["fulfillmentText"] = r[
+                    "msg"] if "msg" in r else "You are being logging out ....."
+            except Exception as e:
+                response.update({
+                    "fulfillmentText":
+                    "Unable to logout from WRS ::: {}".format(e)
+                })
+        else:
+            response["fulfillmentText"] = "You are already logged out."
+        return response
+
+    def get_projects_of_an_employee(self, user_id, wrs_access_token):
         r = requests.get(
             "http://dev-services.agilestructure.in/api/v1/employees/projects.json",
-            headers={"Authorization": self.wrs_access_token},
+            headers={"Authorization": wrs_access_token},
             params={"employee_ids": [user_id]})
         r = r.json()
         return r
 
-    def get_manager_of_project(self, project_id):
-        if self.user_info[config.WRS_EMAIL] == 'rohit.kumar@metacube.com':
-            r = self.user_info[config.WRS_USER_UUID]
+    def get_manager_of_project(self, project_id, wrs_access_token, user_info):
+        if user_info[config.WRS_EMAIL] == 'rohit.kumar@metacube.com':
+            r = user_info[config.WRS_USER_UUID]
         else:
             r = requests.get(
                 "http://dev-services.agilestructure.in/api/v1/groups/{}/manager.json".
                 format(project_id),
-                headers={"Authorization": self.wrs_access_token},
+                headers={"Authorization": wrs_access_token},
                 params={"group_id": project_id})
             r = r.json()[config.WRS_UUID]
         return r
 
-    def get_members_of_a_project(self, project_id):
+    def get_members_of_a_project(self, project_id, wrs_access_token):
         r = requests.get(
             "http://dev-services.agilestructure.in/api/v1/groups/{}/members.json".
             format(project_id),
-            headers={"Authorization": self.wrs_access_token},
+            headers={"Authorization": wrs_access_token},
             params={"group_id": project_id})
         r = r.json()
         return r
@@ -196,11 +281,11 @@ class Webhook(object):
             response["fulfillmentText"] = argv[0]
         return response
 
-    def get_matching_project(self, project_name):
+    def get_matching_project(self, project_name, wrs_access_token, user_info):
         matching_project = None
         mJI = 0
-        projects = self.get_projects_of_an_employee(self.user_info[
-            config.WRS_USER_ID])
+        projects = self.get_projects_of_an_employee(
+            user_info[config.WRS_USER_ID], wrs_access_token)
         logging.info(projects)
         for project in projects:
             if project[config.WRS_PROJECT_NAME] == project_name:
@@ -223,116 +308,161 @@ class Webhook(object):
         project_name = None if TimeSheetAPI.PROJECT_NAME_PARAMETER not in kwargs[
             'params'] else kwargs['params'][
                 TimeSheetAPI.PROJECT_NAME_PARAMETER]
-
-        matching_project = self.get_matching_project(project_name)
-
+        session_id = None if Webhook.DIALOGFLOW_SESSION_PARAMETER not in kwargs[
+            'params'] else kwargs['params'][
+                Webhook.DIALOGFLOW_SESSION_PARAMETER]
+        elem = self.mongo.db[config.ACCESS_TOKENS].find_one({
+            config.DIALOG_FLOW_SESSION_ID: session_id
+        })
         response = {}
-        if matching_project:
-            if self.get_manager_of_project(matching_project[
-                    config.WRS_PROJECT_ID]) == self.user_info[
-                        config.WRS_USER_UUID]:
-                users = self.get_members_of_a_project(matching_project[
-                    config.WRS_PROJECT_ID])
-                if config.WRS_EMAIL in self.user_info and self.user_info[
-                        config.WRS_EMAIL]:
-                    data = {}
-                    data[TimeSheetAPI.MONTH_PARAMETER] = month
-                    data[TimeSheetAPI.YEAR_PARAMETER] = year
-                    data[TimeSheetAPI.PROJECT_PARAMETER] = matching_project
-                    data[TimeSheetAPI.USERS_PARAMETER] = users
-                    data[TimeSheetAPI.MANAGER_INFO_PARAMETER] = self.user_info
-                    response = requests.post(
-                        "http://0.0.0.0:8081/timeSheet/create",
-                        headers=self.headers,
-                        json=data).json()
+        if elem:
+            wrs_access_token = elem[config.WRS_ACCESS_TOKEN]
+            user_info = elem[config.WRS_USER_INFO]
 
-                    spreadsheet_id = response[
-                        config.
-                        SPREADSHEET_ID] if config.SPREADSHEET_ID in response else None
-                    response[
-                        "fulfillmentText"] = "Hey Buddy Say Thanks to me! Your spreadsheetID is {} for project {}".format(
-                            spreadsheet_id, project_name)
+            matching_project = self.get_matching_project(
+                project_name, wrs_access_token, user_info)
+
+            if matching_project:
+                if self.get_manager_of_project(
+                        matching_project[config.WRS_PROJECT_ID],
+                        wrs_access_token,
+                        user_info) == user_info[config.WRS_USER_UUID]:
+                    users = self.get_members_of_a_project(matching_project[
+                        config.WRS_PROJECT_ID])
+                    if config.WRS_EMAIL in user_info and user_info[
+                            config.WRS_EMAIL]:
+                        data = {}
+                        data[TimeSheetAPI.MONTH_PARAMETER] = month
+                        data[TimeSheetAPI.YEAR_PARAMETER] = year
+                        data[TimeSheetAPI.PROJECT_PARAMETER] = matching_project
+                        data[TimeSheetAPI.USERS_PARAMETER] = users
+                        data[TimeSheetAPI.MANAGER_INFO_PARAMETER] = user_info
+                        response = requests.post(
+                            "http://0.0.0.0:8081/timeSheet/create",
+                            headers=self.headers,
+                            json=data).json()
+
+                        spreadsheet_id = response[
+                            config.
+                            SPREADSHEET_ID] if config.SPREADSHEET_ID in response else None
+                        response[
+                            "fulfillmentText"] = "Hey Buddy Say Thanks to me! Your spreadsheetID is {} for project {}".format(
+                                spreadsheet_id, project_name)
+                    else:
+                        response[
+                            "fulfillmentText"] = "Sorry !!! We did not have your Email Address"
                 else:
                     response[
-                        "fulfillmentText"] = "Sorry !!! We did not have your Email Address"
+                        "fulfillmentText"] = "Sorry!!! You are not a Manager for project '{}'".format(
+                            project_name)
             else:
                 response[
-                    "fulfillmentText"] = "Sorry!!! You are not a Manager for project '{}'".format(
-                        project_name)
+                    "fulfillmentText"] = "Your Project Name not found in our DB. If Possible please rephrase it."
         else:
-            response[
-                "fulfillmentText"] = "Your Project Name not found in our DB. If Possible please rephrase it."
+            response["fulfillmentText"] = "Please Login First then try."
         return response
 
     def mark_entry(self, *argv, **kwargs):
-        data = kwargs['params']
-        project_name = data[TimeSheetAPI.PROJECT_NAME_PARAMETER]
-        matching_project = self.get_matching_project(project_name)
-        if matching_project:
-            iAmAdmin = False
-            if self.get_manager_of_project(matching_project[
-                    config.WRS_PROJECT_ID]) == self.user_info[
-                        config.WRS_USER_UUID]:
-                iAmAdmin = True
-                data[TimeSheetAPI.MANAGER_INFO_PARAMETER] = self.user_info
+        session_id = None if Webhook.DIALOGFLOW_SESSION_PARAMETER not in kwargs[
+            'params'] else kwargs['params'][
+                Webhook.DIALOGFLOW_SESSION_PARAMETER]
+        elem = self.mongo.db[config.ACCESS_TOKENS].find_one({
+            config.DIALOG_FLOW_SESSION_ID: session_id
+        })
+        response = {}
+        if elem:
+            wrs_access_token = elem[config.WRS_ACCESS_TOKEN]
+            user_info = elem[config.WRS_USER_INFO]
+
+            data = kwargs['params']
+            project_name = data[TimeSheetAPI.PROJECT_NAME_PARAMETER]
+            matching_project = self.get_matching_project(
+                project_name, wrs_access_token, user_info)
+            if matching_project:
+                iAmAdmin = False
+                if self.get_manager_of_project(
+                        matching_project[config.WRS_PROJECT_ID],
+                        wrs_access_token,
+                        user_info) == user_info[config.WRS_USER_UUID]:
+                    iAmAdmin = True
+                    data[TimeSheetAPI.MANAGER_INFO_PARAMETER] = user_info
+                    data[TimeSheetAPI.USER_INFO_PARAMETER] = user_info
+                else:
+                    data[TimeSheetAPI.USER_INFO_PARAMETER] = user_info
+                data[TimeSheetAPI.I_AM_MANAGER] = iAmAdmin
+                data[TimeSheetAPI.PROJECT_PARAMETER] = matching_project
+
+                response = requests.post(
+                    "http://0.0.0.0:8081/timeSheet/mark_entry",
+                    headers=self.headers,
+                    json=data).json()
+                if "spreadsheetID" in response and response["status"]:
+                    response[
+                        "fulfillmentText"] = "Congratulation!!! Your Entry marked in spreadsheetID: {}".format(
+                            response["spreadsheetID"])
+                elif "error_message" in response:
+                    response["fulfillmentText"] = response["error_message"]
+                else:
+                    response[
+                        "fulfillmentText"] = "Sorry I am unable to mark your entry please provide some more accurate details."
             else:
-                data[TimeSheetAPI.USER_INFO_PARAMETER] = self.user_info
-            data[TimeSheetAPI.I_AM_MANAGER] = iAmAdmin
-            data[TimeSheetAPI.PROJECT_PARAMETER] = matching_project
-            response = requests.post(
-                "http://0.0.0.0:8081/timeSheet/mark_entry",
-                headers=self.headers,
-                json=data).json()
-            if "spreadsheetID" in response and response["status"]:
                 response[
-                    "fulfillmentText"] = "Congratulation!!! Your Entry marked in spreadsheetID: {}".format(
-                        response["spreadsheetID"])
-            elif "error_message" in response:
-                response["fulfillmentText"] = response["error_message"]
-            else:
-                response[
-                    "fulfillmentText"] = "Sorry I am unable to mark your entry please provide some more accurate details."
+                    "fulfillmentText"] = "Project Name {} Not Matched with Employee {}".format(
+                        project_name, user_info[config.WRS_USER_NAME]
+                        if config.WRS_USER_NAME in user_info else
+                        user_info[config.WRS_EMAIL])
         else:
-            response = {
-                "fulfillmentText":
-                "Project Name {} Not Matched with Employee {}".format(
-                    project_name, self.user_info[config.WRS_NAME])
-            }
+            response["fulfillmentText"] = "Please Login First then try."
         return response
 
     def add_work_log(self, *argv, **kwargs):
-        data = kwargs['params']
-        project_name = data[TimeSheetAPI.PROJECT_NAME_PARAMETER]
-        matching_project = self.get_matching_project(project_name)
-        if matching_project:
-            iAmAdmin = False
-            if self.get_manager_of_project(matching_project[
-                    config.WRS_PROJECT_ID]) == self.user_info[
-                        config.WRS_USER_UUID]:
-                iAmAdmin = True
-            data[TimeSheetAPI.I_AM_MANAGER] = iAmAdmin
-            data[TimeSheetAPI.PROJECT_PARAMETER] = matching_project
-            data[TimeSheetAPI.USER_INFO_PARAMETER] = self.user_info
-            response = requests.post(
-                "http://0.0.0.0:8081/timeSheet/add_work_log",
-                headers=self.headers,
-                json=data).json()
-            if config.SPREADSHEET_ID in response:
-                response[
-                    "fulfillmentText"] = "Congratulation!!! Your work log added in spreadsheetID: {} for project: {}".format(
-                        response[config.SPREADSHEET_ID],
-                        response[config.WRS_PROJECT_NAME])
-            elif "error_message" in response:
-                response["fulfillmentText"] = response["error_message"]
+        session_id = None if Webhook.DIALOGFLOW_SESSION_PARAMETER not in kwargs[
+            'params'] else kwargs['params'][
+                Webhook.DIALOGFLOW_SESSION_PARAMETER]
+        elem = self.mongo.db[config.ACCESS_TOKENS].find_one({
+            config.DIALOG_FLOW_SESSION_ID: session_id
+        })
+        response = {}
+        if elem:
+            wrs_access_token = elem[config.WRS_ACCESS_TOKEN]
+            user_info = elem[config.WRS_USER_INFO]
+
+            data = kwargs['params']
+            project_name = data[TimeSheetAPI.PROJECT_NAME_PARAMETER]
+            matching_project = self.get_matching_project(
+                project_name, wrs_access_token, user_info)
+            if matching_project:
+                iAmAdmin = False
+                if self.get_manager_of_project(
+                        matching_project[config.WRS_PROJECT_ID],
+                        wrs_access_token,
+                        user_info) == user_info[config.WRS_USER_UUID]:
+                    iAmAdmin = True
+                data[TimeSheetAPI.I_AM_MANAGER] = iAmAdmin
+                data[TimeSheetAPI.PROJECT_PARAMETER] = matching_project
+                data[TimeSheetAPI.USER_INFO_PARAMETER] = user_info
+                response = requests.post(
+                    "http://0.0.0.0:8081/timeSheet/add_work_log",
+                    headers=self.headers,
+                    json=data).json()
+                if config.SPREADSHEET_ID in response:
+                    response[
+                        "fulfillmentText"] = "Congratulation!!! Your work log added in spreadsheetID: {} for project: {}".format(
+                            response[config.SPREADSHEET_ID],
+                            response[config.WRS_PROJECT_NAME])
+                elif "error_message" in response:
+                    response["fulfillmentText"] = response["error_message"]
+                else:
+                    response[
+                        "fulfillmentText"] = "Sorry I am unable to add your entry please provide some more accurate details."
             else:
                 response[
-                    "fulfillmentText"] = "Sorry I am unable to add your entry please provide some more accurate details."
+                    "fulfillmentText"] = "Project Name {} Not Matched with Employee {}".format(
+                        project_name, user_info[config.WRS_USER_NAME]
+                        if config.WRS_USER_NAME in user_info else
+                        user_info[config.WRS_EMAIL])
         else:
-            response = {
-                "fulfillmentText":
-                "Project Name {} Not Matched with Employee {}".format(
-                    project_name, self.user_info[config.WRS_NAME])
-            }
+            response["fulfillmentText"] = "Please Login First then try."
         return response
 
     @cherrypy.expose
@@ -351,9 +481,12 @@ class Webhook(object):
                     "intent"]:
             intent_name = params["queryResult"]["intent"]["displayName"]
             if intent_name in self.intent_map:
+                session_id = params[Webhook.DIALOGFLOW_SESSION_PARAMETER]
                 params = params["queryResult"]["outputContexts"][0]
                 response = self.intent_map[intent_name](
-                    params=params['parameters'])
+                    params=params['parameters'].union({
+                        Webhook.DIALOGFLOW_SESSION_PARAMETER: session_id
+                    }))
             else:
                 response = self.sorry("Intent not specified in Webhook ::: {}".
                                       format(intent_name))
