@@ -12,7 +12,6 @@ import time
 import socket
 import string
 import random
-from selenium import webdriver
 
 
 def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
@@ -121,6 +120,7 @@ class Webhook(object):
         except Exception as e:
             return {"fulfillmentText": "Unusual Exception Occur"}
 
+    @cherrypy.expose
     def user_login(self, *args, **kwargs):
         session_id = None if Webhook.DIALOGFLOW_SESSION_PARAMETER not in kwargs[
             'params'] else kwargs['params'][
@@ -139,20 +139,12 @@ class Webhook(object):
                 },
                 upsert=True,
                 multi=False)
-            driver = webdriver.Chrome()
-            r = driver.get(
-                "http://dev-accounts.agilestructure.in/sessions/new?client_id={}&email={}&response_type=code".
-                format(Webhook.CLIENT_ID, email))
-            try:
-                response.update(r.json())
-                if "fulfillmentText" not in response:
-                    response[
-                        "fulfillmentText"] = "Logged in Successfully. How can I help you?"
-            except:
-                response["fulfillmentText"] = r.content
+            response[
+                "fulfillmentText"] = "Please login with this url http://dev-accounts.agilestructure.in/sessions/new?client_id={}&email={}&response_type=code".format(
+                    Webhook.CLIENT_ID, email)
         else:
             response[
-                "fulfillmentText"] = "Unable to Loging (Missing Parameters <email> or <session>)"
+                "fulfillmentText"] = "Unable to Logging (Missing Parameters <email> or <session>)"
         return response
 
     def get_user_info(self, *args, **kwargs):
@@ -327,8 +319,9 @@ class Webhook(object):
                         matching_project[config.WRS_PROJECT_ID],
                         wrs_access_token,
                         user_info) == user_info[config.WRS_USER_UUID]:
-                    users = self.get_members_of_a_project(matching_project[
-                        config.WRS_PROJECT_ID])
+                    users = self.get_members_of_a_project(
+                        matching_project[config.WRS_PROJECT_ID],
+                        wrs_access_token)
                     if config.WRS_EMAIL in user_info and user_info[
                             config.WRS_EMAIL]:
                         data = {}
@@ -483,10 +476,9 @@ class Webhook(object):
             if intent_name in self.intent_map:
                 session_id = params[Webhook.DIALOGFLOW_SESSION_PARAMETER]
                 params = params["queryResult"]["outputContexts"][0]
-                response = self.intent_map[intent_name](
-                    params=params['parameters'].union({
-                        Webhook.DIALOGFLOW_SESSION_PARAMETER: session_id
-                    }))
+                data = params['parameters']
+                data.update({Webhook.DIALOGFLOW_SESSION_PARAMETER: session_id})
+                response = self.intent_map[intent_name](params=data)
             else:
                 response = self.sorry("Intent not specified in Webhook ::: {}".
                                       format(intent_name))
