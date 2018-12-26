@@ -35,11 +35,11 @@ class Webhook(object):
             'Welcome': self.hello,
             'Webhook Test': self.test_webhook,
             'Version': self.version,
-            'Mark Entry': self.mark_entry,
-            'Create Projects Sheets': self.create_project_sheet,
-            'Add Work Log': self.add_work_log,
+            'Timesheet Tasks': self.user_login,
             'Get User Info': self.get_user_info,
-            'User Login': self.user_login,
+            'Create Timesheet': self.create_project_sheet,
+            'Add Work Log': self.add_work_log,
+            'Mark Entry': self.mark_entry,
             'User Logout': self.user_logout
         }
         self.headers = {

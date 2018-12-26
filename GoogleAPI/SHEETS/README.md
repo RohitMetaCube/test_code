@@ -51,7 +51,7 @@
 <i>{
 	  "session": "A_Unique_Session_Id",
       "queryResult":{
-      "intent":{"displayName":"User Login"},
+      "intent":{"displayName":"Timesheet Tasks"},
       "outputContexts":[
         {
           "parameters":{
@@ -91,7 +91,7 @@
 <i>{
 	  "session": "A_Unique_Session_Id",
       "queryResult":{
-      "intent":{"displayName":"Create Projects Sheets"},
+      "intent":{"displayName":"Create Timesheet"},
       "outputContexts":[
         {
           "parameters":{
