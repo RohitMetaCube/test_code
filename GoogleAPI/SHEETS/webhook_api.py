@@ -475,8 +475,11 @@ class Webhook(object):
             intent_name = params["queryResult"]["intent"]["displayName"]
             if intent_name in self.intent_map:
                 session_id = params[Webhook.DIALOGFLOW_SESSION_PARAMETER]
-                params = params["queryResult"]["outputContexts"][0]
-                data = params['parameters']
+                if "outputContexts" in params["queryResult"]:
+                    params = params["queryResult"]["outputContexts"][0]
+                    data = params['parameters']
+                else:
+                    data = {}
                 data.update({Webhook.DIALOGFLOW_SESSION_PARAMETER: session_id})
                 response = self.intent_map[intent_name](params=data)
             else:
