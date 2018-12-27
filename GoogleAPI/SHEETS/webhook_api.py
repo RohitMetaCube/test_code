@@ -331,7 +331,7 @@ class Webhook(object):
                         data[TimeSheetAPI.USERS_PARAMETER] = users
                         data[TimeSheetAPI.MANAGER_INFO_PARAMETER] = user_info
                         response = requests.post(
-                            "http://0.0.0.0:8081/timeSheet/create",
+                            "http://0.0.0.0:8080/timeSheet/create",
                             headers=self.headers,
                             json=data).json()
 
@@ -386,7 +386,7 @@ class Webhook(object):
                 data[TimeSheetAPI.PROJECT_PARAMETER] = matching_project
 
                 response = requests.post(
-                    "http://0.0.0.0:8081/timeSheet/mark_entry",
+                    "http://0.0.0.0:8080/timeSheet/mark_entry",
                     headers=self.headers,
                     json=data).json()
                 if "spreadsheetID" in response and response["status"]:
@@ -435,7 +435,7 @@ class Webhook(object):
                 data[TimeSheetAPI.PROJECT_PARAMETER] = matching_project
                 data[TimeSheetAPI.USER_INFO_PARAMETER] = user_info
                 response = requests.post(
-                    "http://0.0.0.0:8081/timeSheet/add_work_log",
+                    "http://0.0.0.0:8080/timeSheet/add_work_log",
                     headers=self.headers,
                     json=data).json()
                 if config.SPREADSHEET_ID in response:
@@ -511,7 +511,7 @@ if __name__ == "__main__":
     root.addHandler(logging_handler)
     cherrypy.config.update({
         'server.socket_host': '0.0.0.0',
-        'server.socket_port': 8080,  #5000,
+        'server.socket_port': 443,  #5000,
         'server.thread_pool_max': 1,
         'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
         'response.timeout': 600,

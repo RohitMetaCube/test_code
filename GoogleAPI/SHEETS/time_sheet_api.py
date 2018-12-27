@@ -970,7 +970,7 @@ if __name__ == '__main__':
     root.addHandler(logging_handler)
     cherrypy.config.update({
         'server.socket_host': '0.0.0.0',
-        'server.socket_port': 8081,
+        'server.socket_port': 8080,
         'server.thread_pool_max': 1,
         'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
         'response.timeout': 600,
