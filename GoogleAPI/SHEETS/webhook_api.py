@@ -140,7 +140,7 @@ class Webhook(object):
                 upsert=True,
                 multi=False)
             response[
-                "fulfillmentText"] = "Please login with this url http://dev-accounts.agilestructure.in/sessions/new?client_id={}&email={}&response_type=code".format(
+                "fulfillmentText"] = '<a href="http://dev-accounts.agilestructure.in/sessions/new?client_id={}&email={}&response_type=code">Please login with this url</a>'.format(
                     Webhook.CLIENT_ID, email)
         else:
             response[
@@ -475,9 +475,13 @@ class Webhook(object):
             intent_name = params["queryResult"]["intent"]["displayName"]
             if intent_name in self.intent_map:
                 session_id = params[Webhook.DIALOGFLOW_SESSION_PARAMETER]
-                if "outputContexts" in params["queryResult"]:
+                if "outputContexts" in params[
+                        "queryResult"] and 'parameters' in params[
+                            "queryResult"]["outputContexts"][0]:
                     params = params["queryResult"]["outputContexts"][0]
                     data = params['parameters']
+                elif "parameters" in params["queryResult"]:
+                    data = params["queryResult"]["parameters"]
                 else:
                     data = {}
                 data.update({Webhook.DIALOGFLOW_SESSION_PARAMETER: session_id})

@@ -25,7 +25,7 @@ class TimeSheetAPI:
     WFH_MARKING = "wfh"
     SPECIAL_WORKDAY_MARKING = "isSpecialWorking"
     WORK_DATE_PARAMETER = "workingDate"
-    WORKING_HOURS = "workingHours"
+    WORKING_HOURS = 'number'  #"workingHours"
     WORK_DETAILS = "workDetails"
     WORK_REFERENCE_TICKET = "jiraTicketNumber"
 
