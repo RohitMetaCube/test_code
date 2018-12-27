@@ -22,8 +22,8 @@ class Webhook(object):
     api_start_time = time.time()
     LOG_FORMAT_STRING = '%(asctime)s [%(levelname)s] %(message)s'
     LOG_TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
-    CLIENT_ID = "4ljR9SXowb_mHGOiqo45hA"
-    CLIENT_SECRET = "7uhCPLOLDpBm87rokO8ORw"
+    CLIENT_ID = 'hIUUAOheNi7Sp0GpmOOryA'  #"4ljR9SXowb_mHGOiqo45hA"
+    CLIENT_SECRET = '6SahZHtP2AE4xyD1pi-4Bg'  #"7uhCPLOLDpBm87rokO8ORw"
     CLIENT_ID_PARAMETER = 'client_id'
     CODE_PARAMETER = 'code'
     ACCESS_TOKEN_PARAMETER = 'access_token'
@@ -35,7 +35,7 @@ class Webhook(object):
             'Welcome': self.hello,
             'Webhook Test': self.test_webhook,
             'Version': self.version,
-            'Timesheet Tasks': self.user_login,
+            'User Login': self.user_login,
             'Get User Info': self.get_user_info,
             'Create Timesheet': self.create_project_sheet,
             'Add Work Log': self.add_work_log,
@@ -481,7 +481,9 @@ class Webhook(object):
                 else:
                     data = {}
                 data.update({Webhook.DIALOGFLOW_SESSION_PARAMETER: session_id})
-                response = self.intent_map[intent_name](params=data)
+                response = {}
+                response["fulfillmentText"] = self.intent_map[intent_name](
+                    params=data)["fulfillmentText"]
             else:
                 response = self.sorry("Intent not specified in Webhook ::: {}".
                                       format(intent_name))

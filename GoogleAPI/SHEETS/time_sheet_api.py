@@ -19,7 +19,6 @@ class TimeSheetAPI:
     PROJECT_PARAMETER = 'projectInfo'
     PROJECT_NAME_PARAMETER = "projectName"
     MARKING_TYPE_PARAMETER = "markingType"
-    MARKING_DATES_PARAMETER = "markingDates"
     LEAVE_MARKING = "leave"
     WORKDAY_MARKING = "working"
     HOLIDAY_MARKING = "holiday"
@@ -86,6 +85,16 @@ class TimeSheetAPI:
             w += 7
         day = (w + 6) % 7
         return day
+
+    def type_converter(self, value, dtype):
+        try:
+            value = dtype(value)
+        except Exception as e:
+            logging.info(
+                "ERROR ::: in type conversion of {} to type {}, errorMsg: {}".
+                format(value, dtype, e))
+            value = None
+        return value
 
     def insert_header(self,
                       employee_id=None,
@@ -593,13 +602,13 @@ class TimeSheetAPI:
             params = cherrypy.request.json
         error_message = "Missing Required Parameter"
         total_time = time.time()
-        month = params[
-            TimeSheetAPI.
-            MONTH_PARAMETER] if TimeSheetAPI.MONTH_PARAMETER in params else time.localtime(
+        month = self.type_converter(
+            params[TimeSheetAPI.MONTH_PARAMETER],
+            int) if TimeSheetAPI.MONTH_PARAMETER in params else time.localtime(
             )[1]
-        year = params[
-            TimeSheetAPI.
-            YEAR_PARAMETER] if TimeSheetAPI.YEAR_PARAMETER in params else time.localtime(
+        year = self.type_converter(
+            params[TimeSheetAPI.YEAR_PARAMETER],
+            int) if TimeSheetAPI.YEAR_PARAMETER in params else time.localtime(
             )[0]
         users = params[
             TimeSheetAPI.
@@ -664,28 +673,31 @@ class TimeSheetAPI:
         error_message = "Missing Required Parameters ({} and {} and {})".format(
             TimeSheetAPI.PROJECT_NAME_PARAMETER,
             TimeSheetAPI.MARKING_TYPE_PARAMETER,
-            TimeSheetAPI.MARKING_DATES_PARAMETER)
+            TimeSheetAPI.WORK_DATE_PARAMETER)
         total_time = time.time()
         markingType = params[
             TimeSheetAPI.
             MARKING_TYPE_PARAMETER] if TimeSheetAPI.MARKING_TYPE_PARAMETER in params else None
         markingDates = params[
             TimeSheetAPI.
-            MARKING_DATES_PARAMETER] if TimeSheetAPI.MARKING_DATES_PARAMETER in params else []
+            WORK_DATE_PARAMETER] if TimeSheetAPI.WORK_DATE_PARAMETER in params else []
+        markingDates = [
+            d for d in [self.type_converter(d, int) for d in markingDates] if d
+        ]
         manager_info = params[
             TimeSheetAPI.
             MANAGER_INFO_PARAMETER] if TimeSheetAPI.MANAGER_INFO_PARAMETER in params else None
-        month = params[
-            TimeSheetAPI.
-            MONTH_PARAMETER] if TimeSheetAPI.MONTH_PARAMETER in params else time.localtime(
+        month = self.type_converter(
+            params[TimeSheetAPI.MONTH_PARAMETER][0],
+            int) if TimeSheetAPI.MONTH_PARAMETER in params else time.localtime(
             )[1]
-        year = params[
-            TimeSheetAPI.
-            YEAR_PARAMETER] if TimeSheetAPI.YEAR_PARAMETER in params else time.localtime(
+        year = self.type_converter(
+            params[TimeSheetAPI.YEAR_PARAMETER][0],
+            int) if TimeSheetAPI.YEAR_PARAMETER in params else time.localtime(
             )[0]
-        specialWorkDay = params[
-            TimeSheetAPI.
-            SPECIAL_WORKDAY_MARKING] if TimeSheetAPI.SPECIAL_WORKDAY_MARKING in params else False
+        specialWorkDay = self.type_converter(
+            params[TimeSheetAPI.SPECIAL_WORKDAY_MARKING],
+            bool) if TimeSheetAPI.SPECIAL_WORKDAY_MARKING in params else False
         taskDetails = params[
             TimeSheetAPI.
             WORK_DETAILS] if TimeSheetAPI.WORK_DETAILS in params else None
@@ -712,6 +724,7 @@ class TimeSheetAPI:
                 project[config.WRS_PROJECT_NAME], {
                     'email': user_info[config.WRS_EMAIL],
                     "month": month,
+                    "dates": markingDates,
                     "year": year
                 }, spreadsheet_details))
         spreadsheet_id = spreadsheet_details[config.SPREADSHEET_ID]
@@ -798,29 +811,29 @@ class TimeSheetAPI:
         if cherrypy.request.method == "POST":
             params = cherrypy.request.json
         total_time = time.time()
-        workDate = params[
-            TimeSheetAPI.
-            WORK_DATE_PARAMETER] if TimeSheetAPI.WORK_DATE_PARAMETER in params else None
-        workingHours = params[
-            TimeSheetAPI.
-            WORKING_HOURS] if TimeSheetAPI.WORKING_HOURS in params else None
+        workDate = self.type_converter(
+            params[TimeSheetAPI.WORK_DATE_PARAMETER],
+            int) if TimeSheetAPI.WORK_DATE_PARAMETER in params else None
+        workingHours = self.type_converter(
+            params[TimeSheetAPI.WORKING_HOURS],
+            float) if TimeSheetAPI.WORKING_HOURS in params else None
         taskDetails = params[
             TimeSheetAPI.
             WORK_DETAILS] if TimeSheetAPI.WORK_DETAILS in params else ''
         jiraTicketNumber = params[
             TimeSheetAPI.
             WORK_REFERENCE_TICKET] if TimeSheetAPI.WORK_REFERENCE_TICKET in params else None
-        month = params[
-            TimeSheetAPI.
-            MONTH_PARAMETER] if TimeSheetAPI.MONTH_PARAMETER in params else time.localtime(
+        month = self.type_converter(
+            params[TimeSheetAPI.MONTH_PARAMETER],
+            int) if TimeSheetAPI.MONTH_PARAMETER in params else time.localtime(
             )[1]
-        year = params[
-            TimeSheetAPI.
-            YEAR_PARAMETER] if TimeSheetAPI.YEAR_PARAMETER in params else time.localtime(
+        year = self.type_converter(
+            params[TimeSheetAPI.YEAR_PARAMETER],
+            int) if TimeSheetAPI.YEAR_PARAMETER in params else time.localtime(
             )[0]
-        specialWorkDay = params[
-            TimeSheetAPI.
-            SPECIAL_WORKDAY_MARKING] if TimeSheetAPI.SPECIAL_WORKDAY_MARKING in params else False
+        specialWorkDay = self.type_converter(
+            params[TimeSheetAPI.SPECIAL_WORKDAY_MARKING],
+            bool) if TimeSheetAPI.SPECIAL_WORKDAY_MARKING in params else False
         user_info = params[
             TimeSheetAPI.
             USER_INFO_PARAMETER] if TimeSheetAPI.USER_INFO_PARAMETER in params else {}
