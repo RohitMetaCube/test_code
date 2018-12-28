@@ -139,9 +139,9 @@ class Webhook(object):
                 },
                 upsert=True,
                 multi=False)
-            response[
-                "fulfillmentText"] = '<a href="http://dev-accounts.agilestructure.in/sessions/new?client_id={}&email={}&response_type=code">Please login with this url</a>'.format(
-                    Webhook.CLIENT_ID, email)
+            text = '<a href="http://dev-accounts.agilestructure.in/sessions/new?client_id={}&email={}&response_type=code">Please login with this url</a>'.format(
+                Webhook.CLIENT_ID, email)
+            response["fulfillmentText"] = text
         else:
             response[
                 "fulfillmentText"] = "Unable to Logging (Missing Parameters <email> or <session>)"
@@ -218,15 +218,12 @@ class Webhook(object):
         return r
 
     def get_manager_of_project(self, project_id, wrs_access_token, user_info):
-        if user_info[config.WRS_EMAIL] == 'rohit.kumar@metacube.com':
-            r = user_info[config.WRS_USER_UUID]
-        else:
-            r = requests.get(
-                "http://dev-services.agilestructure.in/api/v1/groups/{}/manager.json".
-                format(project_id),
-                headers={"Authorization": wrs_access_token},
-                params={"group_id": project_id})
-            r = r.json()[config.WRS_UUID]
+        r = requests.get(
+            "http://dev-services.agilestructure.in/api/v1/groups/{}/manager.json".
+            format(project_id),
+            headers={"Authorization": wrs_access_token},
+            params={"group_id": project_id})
+        r = r.json()[config.WRS_UUID]
         return r
 
     def get_members_of_a_project(self, project_id, wrs_access_token):
