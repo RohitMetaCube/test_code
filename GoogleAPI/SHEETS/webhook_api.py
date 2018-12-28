@@ -278,17 +278,18 @@ class Webhook(object):
         return response
 
     def get_matching_project(self, project_name, wrs_access_token, user_info):
+        project_name = project_name.lower()
         matching_project = None
         mJI = 0
         projects = self.get_projects_of_an_employee(
             user_info[config.WRS_USER_ID], wrs_access_token)
         logging.info(projects)
         for project in projects:
-            if project[config.WRS_PROJECT_NAME] == project_name:
+            if project[config.WRS_PROJECT_NAME].lower() == project_name:
                 matching_project = project
                 break
             p1_tokens = project_name.split()
-            p2_tokens = project[config.WRS_PROJECT_NAME].split()
+            p2_tokens = project[config.WRS_PROJECT_NAME].lower().split()
             JI = len(set(p1_tokens).intersection(p2_tokens)) / len(
                 set(p1_tokens).union(p2_tokens))
             if JI > 0.6 and JI > mJI:
