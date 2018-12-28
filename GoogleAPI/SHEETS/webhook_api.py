@@ -227,12 +227,19 @@ class Webhook(object):
         return r
 
     def get_members_of_a_project(self, project_id, wrs_access_token):
+        field_map = {
+            config.WRS_EMAIL: config.WRS_EMPLOYEE_EMAIL,
+            config.WRS_ID: config.WRS_EMPLOYEE_USER_ID,
+            config.WRS_UUID: config.WRS_EMPLOYEE_USER_UUID,
+            config.WRS_NAME: config.WRS_EMPLOYEE_USER_NAME
+        }
         r = requests.get(
             "http://dev-services.agilestructure.in/api/v1/groups/{}/members.json".
             format(project_id),
             headers={"Authorization": wrs_access_token},
             params={"group_id": project_id})
         r = r.json()
+        r = [{k: user[v] for k, v in field_map.items()} for user in r]
         return r
 
     def hello(self, *argv, **kwargs):

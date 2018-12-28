@@ -619,18 +619,18 @@ class TimeSheetAPI:
         manager_info = params[TimeSheetAPI.MANAGER_INFO_PARAMETER] if TimeSheetAPI.MANAGER_INFO_PARAMETER in params else {}
 
         users = [user for user in users if config.WRS_NAME in user]
-        manager_as_user = {
-            config.WRS_ID: manager_info[config.WRS_USER_ID],
-            config.WRS_UUID: manager_info[config.WRS_USER_UUID],
-            config.WRS_EMAIL: manager_info[config.WRS_EMAIL]
-        }
-        if config.WRS_USER_NAME in manager_info:
-            manager_as_user[config.WRS_NAME] = manager_info[
-                config.WRS_USER_NAME]
-        if config.WRS_EMPLOYEE_ID in manager_info:
-            manager_as_user[config.WRS_EMPLOYEE_ID] = manager_info[
-                config.WRS_EMPLOYEE_ID]
-        users.append(manager_as_user)
+        #         manager_as_user = {
+        #             config.WRS_ID: manager_info[config.WRS_USER_ID],
+        #             config.WRS_UUID: manager_info[config.WRS_USER_UUID],
+        #             config.WRS_EMAIL: manager_info[config.WRS_EMAIL]
+        #         }
+        #         if config.WRS_USER_NAME in manager_info:
+        #             manager_as_user[config.WRS_NAME] = manager_info[
+        #                 config.WRS_USER_NAME]
+        #         if config.WRS_EMPLOYEE_ID in manager_info:
+        #             manager_as_user[config.WRS_EMPLOYEE_ID] = manager_info[
+        #                 config.WRS_EMPLOYEE_ID]
+        #         users.append(manager_as_user)
 
         sheets = [
             user[config.WRS_NAME]
