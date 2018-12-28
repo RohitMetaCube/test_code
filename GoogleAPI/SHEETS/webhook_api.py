@@ -40,7 +40,8 @@ class Webhook(object):
             'Create Timesheet': self.create_project_sheet,
             'Add Work Log': self.add_work_log,
             'Mark Entry': self.mark_entry,
-            'User Logout': self.user_logout
+            'User Logout': self.user_logout,
+            'Project Names': self.get_project_names
         }
         self.headers = {
             'content-type': 'application/json',
@@ -207,6 +208,23 @@ class Webhook(object):
                 })
         else:
             response["fulfillmentText"] = "You are already logged out."
+        return response
+
+    def get_project_names(self, *args, **kwargs):
+        session_id = None if Webhook.DIALOGFLOW_SESSION_PARAMETER not in kwargs[
+            'params'] else kwargs['params'][
+                Webhook.DIALOGFLOW_SESSION_PARAMETER]
+        elem = self.mongo.db[config.ACCESS_TOKENS].find_one({
+            config.DIALOG_FLOW_SESSION_ID: session_id
+        })
+        response = {}
+        if elem:
+            wrs_access_token = elem[config.WRS_ACCESS_TOKEN]
+            user_info = elem[config.WRS_USER_INFO]
+            projects = self.get_projects_of_an_employee(
+                user_info[config.WRS_USER_ID], wrs_access_token)
+            response["fulfillmentText"] = "\n-".join(
+                project[config.WRS_PROJECT_NAME] for project in projects)
         return response
 
     def get_projects_of_an_employee(self, user_id, wrs_access_token):
