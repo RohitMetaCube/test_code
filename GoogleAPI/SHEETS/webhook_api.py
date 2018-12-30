@@ -64,6 +64,7 @@ class Webhook(object):
         cherrypy.response.headers['Content-Type'] = "application/json"
         cherrypy.response.headers['Connection'] = "close"
 
+        response_data = {}
         try:
             params = cherrypy.request.params
             wrs_client_code = params[
@@ -76,8 +77,6 @@ class Webhook(object):
                         Webhook.CODE_PARAMETER: wrs_client_code,
                         Webhook.CLIENT_ID_PARAMETER: Webhook.CLIENT_ID
                     })
-
-                response_data = {}
 
                 try:
                     wrs_access_token = r.json()[Webhook.ACCESS_TOKEN_PARAMETER]
@@ -112,14 +111,32 @@ class Webhook(object):
                         format(wrs_client_code),
                         "error": str(e)
                     }
-                finally:
-                    return response_data
             else:
-                return {
-                    "fulfillmentText": "code parameter not returned by WRS"
-                }
+                response_data[
+                    "fulfillmentText"] = "code parameter not returned by WRS"
         except Exception as e:
-            return {"fulfillmentText": "Unusual Exception Occur"}
+            response_data["fulfillmentText"] = "Unusual Exception Occur"
+        msg = "<h2>{}</h2></br></br>".format(response_data["fullfillmentText"])
+        if "employee" in response_data:
+            msg += '''
+                        <table style="width:100%">
+                          <caption>User Details</caption>
+                          <tr>
+                            <th>Field</th>
+                            <th>Value</th>
+                          </tr>
+                    '''
+            for k, v in response_data["employee"].items():
+                msg += '''
+                            <tr>
+                                <td>{}</td>
+                                <td>{}</td>
+                            </tr>
+                        '''.format(k, v)
+            msg += '''
+                        </table>
+                    '''
+        return msg
 
     @cherrypy.expose
     def user_login(self, *args, **kwargs):
@@ -140,7 +157,7 @@ class Webhook(object):
                 },
                 upsert=True,
                 multi=False)
-            text = '<a href="http://dev-accounts.agilestructure.in/sessions/new?client_id={}&email={}&response_type=code">Please login with this url</a>'.format(
+            text = '<a target="_blank" rel="noopener noreferrer" href="http://dev-accounts.agilestructure.in/sessions/new?client_id={}&email={}&response_type=code">Please login with this url</a>'.format(
                 Webhook.CLIENT_ID, email)
             response["fulfillmentText"] = text
         else:
