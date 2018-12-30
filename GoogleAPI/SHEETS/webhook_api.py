@@ -116,7 +116,7 @@ class Webhook(object):
                     "fulfillmentText"] = "code parameter not returned by WRS"
         except Exception as e:
             response_data["fulfillmentText"] = "Unusual Exception Occur"
-        msg = "<h2>{}</h2></br></br>".format(response_data["fullfillmentText"])
+        msg = "<h2>{}</h2></br></br>".format(response_data["fulfillmentText"])
         if "employee" in response_data:
             msg += '''
                         <table style="width:100%">
