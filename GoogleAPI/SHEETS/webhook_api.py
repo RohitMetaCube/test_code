@@ -59,9 +59,8 @@ class Webhook(object):
                                                Webhook.api_start_time))
 
     @cherrypy.expose
-    @cherrypy.tools.json_out()
     def access(self, **other_params):
-        cherrypy.response.headers['Content-Type'] = "application/json"
+        cherrypy.response.headers['Content-Type'] = "text/html"
         cherrypy.response.headers['Connection'] = "close"
 
         response_data = {}
@@ -103,7 +102,7 @@ class Webhook(object):
                         "employee": r
                     }
                     response_data[
-                        "fulfillmentText"] = "Welcome! How can I Help You."
+                        "fulfillmentText"] = "Welcome! You Are Registered Successfully."
                 except Exception as e:
                     response_data = {
                         "fulfillmentText":
@@ -118,24 +117,38 @@ class Webhook(object):
             response_data["fulfillmentText"] = "Unusual Exception Occur"
         msg = "<h2>{}</h2></br></br>".format(response_data["fulfillmentText"])
         if "employee" in response_data:
-            msg += '''
-                        <table style="width:100%">
-                          <caption>User Details</caption>
-                          <tr>
-                            <th>Field</th>
-                            <th>Value</th>
-                          </tr>
-                    '''
+            msg += ("<style>"
+                    "table, th, td {"
+                    "border: 1px solid black;"
+                    "border-collapse: collapse;"
+                    "text-align: center;"
+                    "}"
+                    "table {"
+                    "border-spacing: 15px;"
+                    "}"
+                    "table#t01 tr:nth-child(even) {"
+                    "background-color: #eee;"
+                    "}"
+                    "table#t01 tr:nth-child(odd) {"
+                    "background-color: #fff;"
+                    "}"
+                    "table#t01 th {"
+                    "color: white;"
+                    "background-color: black;"
+                    "}"
+                    "</style>")
+            msg += ("<table style='width:100%' id=t01>"
+                    "  <caption>User Details</caption>"
+                    "  <tr>"
+                    "    <th>Field</th>"
+                    "    <th>Value</th>"
+                    "  </tr>")
             for k, v in response_data["employee"].items():
-                msg += '''
-                            <tr>
-                                <td>{}</td>
-                                <td>{}</td>
-                            </tr>
-                        '''.format(k, v)
-            msg += '''
-                        </table>
-                    '''
+                msg += ("<tr>"
+                        "    <td>{}</td>"
+                        "    <td>{}</td>"
+                        "</tr>").format(k, v)
+            msg += "</table>"
         return msg
 
     @cherrypy.expose
