@@ -248,7 +248,7 @@ class Webhook(object):
             config.DIALOG_FLOW_SESSION_ID: session_id
         })
         response = {}
-        if elem:
+        if elem and config.WRS_ACCESS_TOKEN in elem:
             wrs_access_token = elem[config.WRS_ACCESS_TOKEN]
             user_info = elem[config.WRS_USER_INFO]
             projects = self.get_projects_of_an_employee(
