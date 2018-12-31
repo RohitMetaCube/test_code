@@ -28,6 +28,7 @@ class TimeSheetAPI:
     WORKING_HOURS = 'number'  #"workingHours"
     WORK_DETAILS = "workDetails"
     WORK_REFERENCE_TICKET = "jiraTicketNumber"
+    TASK_TYPE = "taskType"
 
     api_start_time = time.time()
     LOG_FORMAT_STRING = '%(asctime)s [%(levelname)s] %(message)s'
@@ -843,12 +844,18 @@ class TimeSheetAPI:
         IAmManager = params[
             TimeSheetAPI.
             I_AM_MANAGER] if TimeSheetAPI.I_AM_MANAGER in params else False
+        taskType = params[
+            TimeSheetAPI.
+            TASK_TYPE] if TimeSheetAPI.TASK_TYPE in params else None
 
         taskDetails = "{}: {}".format(
             jiraTicketNumber, taskDetails) if jiraTicketNumber else taskDetails
 
         if not project or config.WRS_PROJECT_NAME not in project:
             project[config.WRS_PROJECT_NAME] = "NOT_FOUND"
+
+        if not taskType:
+            taskType = project[config.WRS_PROJECT_NAME]
 
         spreadsheet_details = self.mongodb.fetch_spreadsheet_id_and_index(
             month,
@@ -859,7 +866,7 @@ class TimeSheetAPI:
         sheetIndex = int(spreadsheet_details[
             config.USER_SHEET_INDEX]) if spreadsheet_details[
                 config.USER_SHEET_INDEX] else None
-        userName = spreadsheet_details[config.WRS_NAME]
+        userName = user_info[config.WRS_USER_NAME]
         if not userName:
             userName = user_info[config.WRS_EMAIL]
         response_object = {}
@@ -880,20 +887,21 @@ class TimeSheetAPI:
                     email=user_info[config.WRS_EMAIL],
                     date=workDate)
                 existing_data = [[
-                    "{}: {}".format(xd[config.JIRA_TICKET_NUMBER],
-                                    xd[config.TASK_FIELD])
+                    xd[config.TASK_TYPE_FIELD], "{}: {}".format(
+                        xd[config.JIRA_TICKET_NUMBER], xd[config.TASK_FIELD])
                     if xd[config.JIRA_TICKET_NUMBER] else
                     xd[config.TASK_FIELD], xd[config.WORKING_HOURS]
                 ] for xd in existing_data]
                 if len(existing_data) < self.PER_DAY_ROWS_COUNT:
-                    existing_data.append([taskDetails, workingHours])
+                    existing_data.append([taskType, taskDetails, workingHours])
                     [
-                        existing_data.append(['', ''])
+                        existing_data.append(['', '', ''])
                         for _ in range(self.PER_DAY_ROWS_COUNT - len(
                             existing_data))
                     ]
                 else:
                     existing_data[self.PER_DAY_ROWS_COUNT - 1] = [
+                        existing_data[self.PER_DAY_ROWS_COUNT - 1][0],
                         '\n'.join(per_day_existing_data[0]
                                   for per_day_existing_data in existing_data[
                                       self.PER_DAY_ROWS_COUNT - 1:]),
@@ -903,15 +911,16 @@ class TimeSheetAPI:
                     ]
                     existing_data = existing_data[:self.PER_DAY_ROWS_COUNT]
                     existing_data[-1] = [
-                        existing_data[-1][0] + "\n" + taskDetails,
-                        float(existing_data[-1][1]) + workingHours
-                        if existing_data[-1][1] and workingHours else (
+                        existing_data[-1][0],
+                        existing_data[-1][1] + "\n" + taskDetails,
+                        float(existing_data[-1][2]) + workingHours
+                        if existing_data[-1][2] and workingHours else (
                             workingHours
-                            if workingHours else existing_data[-1][1])
+                            if workingHours else existing_data[-1][2])
                     ]
                 self.gsh.update_data_in_sheet(
                     spreadsheetId=spreadsheet_id,
-                    range_='{}!D{}:E{}'.format(
+                    range_='{}!C{}:E{}'.format(
                         userName
                         if userName else "Sheet{}".format(sheetIndex + 1),
                         start_index, start_index + self.PER_DAY_ROWS_COUNT),
@@ -922,6 +931,7 @@ class TimeSheetAPI:
                     email=user_info[config.WRS_EMAIL],
                     date=workDate,
                     task=taskDetails,
+                    task_type=taskType,
                     hours=workingHours,
                     jira=jiraTicketNumber)
 

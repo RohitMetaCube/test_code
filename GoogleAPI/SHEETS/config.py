@@ -27,6 +27,7 @@ WORKING_HOURS = "working_hours"
 WORKING_ORDER_FIELD = "working_order"
 JIRA_TICKET_NUMBER = "jira_ticket_number"
 DIALOG_FLOW_SESSION_ID = "dialogflow_session_id"
+TASK_TYPE_FIELD = "task_type"
 
 # WRS_FIELDS
 WRS_NAME = "full_name"

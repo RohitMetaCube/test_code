@@ -121,6 +121,7 @@ class mongoDB:
                      email,
                      date,
                      task,
+                     task_type=None,
                      hours=0,
                      jira=None):
         self.update_data(
@@ -135,6 +136,7 @@ class mongoDB:
                                       config.TASK_DETAILS): {
                                           config.WORKING_HOURS: hours,
                                           config.TASK_FIELD: task,
+                                          config.TASK_TYPE_FIELD: task_type,
                                           config.JIRA_TICKET_NUMBER: jira,
                                           config.WORKING_ORDER_FIELD: None
                                       }
