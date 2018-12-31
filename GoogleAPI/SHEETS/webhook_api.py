@@ -253,8 +253,9 @@ class Webhook(object):
             user_info = elem[config.WRS_USER_INFO]
             projects = self.get_projects_of_an_employee(
                 user_info[config.WRS_USER_ID], wrs_access_token)
-            response["fulfillmentText"] = "\n-".join(
-                project[config.WRS_PROJECT_NAME] for project in projects)
+            response["fulfillmentText"] = "<ul><li>{}</li></ul>".format(
+                "</li><li>".join(project[config.WRS_PROJECT_NAME]
+                                 for project in projects))
         return response
 
     def get_projects_of_an_employee(self, user_id, wrs_access_token):
