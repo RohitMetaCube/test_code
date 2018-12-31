@@ -26,7 +26,7 @@ class TimeSheetAPI:
     SPECIAL_WORKDAY_MARKING = "isSpecialWorking"
     WORK_DATE_PARAMETER = "workingDate"
     WORKING_HOURS = 'number'  #"workingHours"
-    WORK_DETAILS = "workDetails"
+    WORK_DETAILS = 'any'  #"workDetails"
     WORK_REFERENCE_TICKET = "jiraTicketNumber"
     TASK_TYPE = "taskType"
 
