@@ -38,6 +38,7 @@ class Webhook(object):
             'User Login': self.user_login,
             'Get User Info': self.get_user_info,
             'Create Timesheet': self.create_project_sheet,
+            'Remove Timesheet': self.remove_project_sheet,
             'Add Work Log': self.add_work_log,
             'Mark Entry': self.mark_entry,
             'User Logout': self.user_logout,
@@ -394,6 +395,64 @@ class Webhook(object):
                             SPREADSHEET_ID] if config.SPREADSHEET_ID in response else None
                         response[
                             "fulfillmentText"] = "Hey Buddy Say Thanks to me! Your spreadsheetID is {} for project {}".format(
+                                spreadsheet_id, project_name)
+                    else:
+                        response[
+                            "fulfillmentText"] = "Sorry !!! We did not have your Email Address"
+                else:
+                    response[
+                        "fulfillmentText"] = "Sorry!!! You are not a Manager for project '{}'".format(
+                            project_name)
+            else:
+                response[
+                    "fulfillmentText"] = "Your Project Name not found in our DB. If Possible please rephrase it."
+        else:
+            response["fulfillmentText"] = "Please Login First then try."
+        return response
+
+    def remove_project_sheet(self, *args, **kwargs):
+        month = kwargs['params'][config.MONTH] if config.MONTH in kwargs[
+            'params'] else time.localtime()[1]
+        year = kwargs['params'][config.YEAR] if config.YEAR in kwargs[
+            'params'] else time.localtime()[0]
+        project_name = None if TimeSheetAPI.PROJECT_NAME_PARAMETER not in kwargs[
+            'params'] else kwargs['params'][
+                TimeSheetAPI.PROJECT_NAME_PARAMETER]
+        session_id = None if Webhook.DIALOGFLOW_SESSION_PARAMETER not in kwargs[
+            'params'] else kwargs['params'][
+                Webhook.DIALOGFLOW_SESSION_PARAMETER]
+        elem = self.mongo.db[config.ACCESS_TOKENS].find_one({
+            config.DIALOG_FLOW_SESSION_ID: session_id
+        })
+        response = {}
+        if elem:
+            wrs_access_token = elem[config.WRS_ACCESS_TOKEN]
+            user_info = elem[config.WRS_USER_INFO]
+
+            matching_project = self.get_matching_project(
+                project_name, wrs_access_token, user_info)
+
+            if matching_project:
+                if self.get_manager_of_project(
+                        matching_project[config.WRS_PROJECT_ID],
+                        wrs_access_token,
+                        user_info) == user_info[config.WRS_USER_UUID]:
+                    if config.WRS_EMAIL in user_info and user_info[
+                            config.WRS_EMAIL]:
+                        data = {}
+                        data[TimeSheetAPI.MONTH_PARAMETER] = month
+                        data[TimeSheetAPI.YEAR_PARAMETER] = year
+                        data[TimeSheetAPI.PROJECT_PARAMETER] = matching_project
+                        response = requests.post(
+                            "http://0.0.0.0:8080/timeSheet/remove",
+                            headers=self.headers,
+                            json=data).json()
+
+                        spreadsheet_id = response[
+                            config.
+                            SPREADSHEET_ID] if config.SPREADSHEET_ID in response else None
+                        response[
+                            "fulfillmentText"] = "Successfully Removed spreadsheetID {} of project {}".format(
                                 spreadsheet_id, project_name)
                     else:
                         response[

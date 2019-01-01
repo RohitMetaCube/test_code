@@ -290,3 +290,21 @@ class mongoDB:
                 config.WORK_FROM_HOME: {},
                 config.USER_LEAVES: {}
             })
+
+    def remove_spreadsheet(self, month=None, year=None, project_name=None):
+        spreadsheet_id = None
+        if month and year:
+            elem = self.db[config.SHEETS_COLLECTION].find_one({
+                config.YEAR: year,
+                config.MONTH: month,
+                config.WRS_PROJECT_NAME: project_name
+            }, {config.SPREADSHEET_ID: 1})
+            if elem:
+                spreadsheet_id = elem[config.SPREADSHEET_ID]
+                self.db[config.LOGS_COLLECTION].remove({
+                    config.SPREADSHEET_ID: spreadsheet_id
+                })
+                self.db[config.SHEETS_COLLECTION].remove({
+                    config.SPREADSHEET_ID: spreadsheet_id
+                })
+        return spreadsheet_id

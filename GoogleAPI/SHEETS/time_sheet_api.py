@@ -973,6 +973,42 @@ class TimeSheetAPI:
 
         return response_object
 
+    @cherrypy.expose
+    @cherrypy.tools.json_out()
+    @cherrypy.tools.json_in()
+    def remove(self, **other_params):
+        cherrypy.response.headers['Content-Type'] = "application/json"
+        cherrypy.response.headers['Connection'] = "close"
+
+        params = {}
+        if cherrypy.request.method == "POST":
+            params = cherrypy.request.json
+        error_message = "Missing Required Parameter"
+        total_time = time.time()
+        month = self.type_converter(
+            params[TimeSheetAPI.MONTH_PARAMETER],
+            int) if TimeSheetAPI.MONTH_PARAMETER in params else time.localtime(
+            )[1]
+        year = self.type_converter(
+            params[TimeSheetAPI.YEAR_PARAMETER],
+            int) if TimeSheetAPI.YEAR_PARAMETER in params else time.localtime(
+            )[0]
+        project = params[
+            TimeSheetAPI.
+            PROJECT_PARAMETER] if TimeSheetAPI.PROJECT_PARAMETER in params else {}
+
+        if month and project and project[config.WRS_PROJECT_NAME]:
+            spreadsheet_id = self.mongodb.remove_spreadsheet(
+                month, year, project_name=project[config.WRS_PROJECT_NAME])[
+                    config.SPREADSHEET_ID]
+            response_object = {
+                "processingTime": time.time() - total_time,
+                config.SPREADSHEET_ID: spreadsheet_id
+            }
+        else:
+            response_object = {"error_message": error_message}
+        return response_object
+
 
 class health_check:
     def __init__(self):
