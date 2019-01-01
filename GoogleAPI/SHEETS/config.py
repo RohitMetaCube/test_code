@@ -47,3 +47,6 @@ WRS_EMPLOYEE_USER_ID = "employee_id"
 WRS_EMPLOYEE_USER_UUID = "employee_uuid"
 WRS_EMPLOYEE_USER_NAME = "employee_name"
 WRS_EMPLOYEE_EMAIL = "employee_email"
+
+# GLOBAL MANAGER
+GLOBAL_MANAGER = "rohit.kumar@metacube.com"

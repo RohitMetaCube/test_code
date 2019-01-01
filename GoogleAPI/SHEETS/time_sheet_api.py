@@ -560,7 +560,7 @@ class TimeSheetAPI:
 
         return spreadsheet_id
 
-    def update_user_details(self, users, spreadsheet_id):
+    def update_user_details(self, manager_email, users, spreadsheet_id):
         for user in users:
             self.gsh.update_data_in_sheet(
                 spreadsheetId=spreadsheet_id,
@@ -573,13 +573,18 @@ class TimeSheetAPI:
                                               else "", user[config.WRS_NAME] if
                                               config.WRS_NAME in user else "")
                 ]])
-            ''' Share Sheet with User '''
-            self.gsh.share_google_spreadsheet(
-                share_emails=[
-                    user[config.WRS_EMAIL] for user in users
-                    if config.WRS_EMAIL in user
-                ],
-                spreadsheetId=spreadsheet_id)
+        ''' Share Sheet with Users and Manager '''
+        users_email = [
+            user[config.WRS_EMAIL] for user in users
+            if config.WRS_EMAIL in user and user[config.WRS_EMAIL] !=
+            manager_email
+        ]
+        remove_email = config.GLOBAL_MANAGER if manager_email != config.GLOBAL_MANAGER and config.GLOBAL_MANAGER not in users_email else None
+        self.gsh.share_google_spreadsheet(
+            manager_email,
+            share_emails=users_email,
+            spreadsheetId=spreadsheet_id,
+            remove_email=remove_email)
 
     @cherrypy.expose
     @cherrypy.tools.json_out()
@@ -653,7 +658,9 @@ class TimeSheetAPI:
                             sheets=sheets,
                             project_name=project[config.WRS_PROJECT_NAME],
                             spreadsheet_id=spreadsheet_id)
-                        self.update_user_details(users, spreadsheet_id)
+                        self.update_user_details(
+                            manager_info[config.WRS_EMAIL], users,
+                            spreadsheet_id)
                         self.mongodb.create_new_records(
                             spreadsheet_id,
                             manager=manager_info,
@@ -999,8 +1006,7 @@ class TimeSheetAPI:
 
         if month and project and project[config.WRS_PROJECT_NAME]:
             spreadsheet_id = self.mongodb.remove_spreadsheet(
-                month, year, project_name=project[config.WRS_PROJECT_NAME])[
-                    config.SPREADSHEET_ID]
+                month, year, project_name=project[config.WRS_PROJECT_NAME])
             response_object = {
                 "processingTime": time.time() - total_time,
                 config.SPREADSHEET_ID: spreadsheet_id

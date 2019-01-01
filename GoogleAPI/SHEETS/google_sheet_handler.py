@@ -93,7 +93,11 @@ class GoogleSheetHandler():
         root.setLevel(logging.INFO)
         root.addHandler(logging_handler)
 
-    def share_google_spreadsheet(self, share_emails=[], spreadsheetId=None):
+    def share_google_spreadsheet(self,
+                                 manager_email=None,
+                                 share_emails=[],
+                                 spreadsheetId=None,
+                                 remove_email=None):
         if share_emails:
             for emailAddr in share_emails:
                 # https://developers.google.com/drive/v3/web/manage-sharing#roles
@@ -110,6 +114,29 @@ class GoogleSheetHandler():
                     emailMessage="This is an Auto Generated Mail of file sharing",
                     body=domain_permission)
                 req.execute()
+
+        if manager_email:
+            domain_permission = {
+                'type': 'user',
+                'role': 'owner',
+                'emailAddress': manager_email
+            }
+
+            req = self.drive_service.permissions().create(
+                fileId=spreadsheetId,
+                sendNotificationEmail=True,
+                transferOwnership=True,
+                emailMessage="This is an Auto Generated Mail of file sharing",
+                body=domain_permission)
+            req.execute()
+
+        if remove_email:
+            id_resp = self.drive_service.permissions().getIdForEmail(
+                email=remove_email).execute()
+            permission_id = id_resp['id']
+            req = self.drive_service.permissions().delete(
+                fileId=spreadsheetId, permissionId=permission_id)
+            req.execute()
 
     def create_google_sheet(self, projectName=None, month=None, year=None):
         response = None
