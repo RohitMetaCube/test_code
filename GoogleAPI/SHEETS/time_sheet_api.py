@@ -607,6 +607,7 @@ class TimeSheetAPI:
         project = params[
             TimeSheetAPI.
             PROJECT_PARAMETER] if TimeSheetAPI.PROJECT_PARAMETER in params else {}
+
         manager_info = params[TimeSheetAPI.MANAGER_INFO_PARAMETER] if TimeSheetAPI.MANAGER_INFO_PARAMETER in params else {}
 
         users = [user for user in users if config.WRS_NAME in user]
@@ -630,31 +631,36 @@ class TimeSheetAPI:
         ]
         sheets.insert(0, None)
         if month and project and project[config.WRS_PROJECT_NAME]:
-            print "Creating a new spreadsheet...."
-            create_response = self.gsh.create_google_sheet(
-                projectName=project[config.WRS_PROJECT_NAME],
-                month=self.MONTHS[month - 1],
-                year=year)
-            if create_response:
-                spreadsheet_id = create_response["spreadsheetId"]
-                newpid = os.fork()
-                if newpid == 0:
-                    spreadsheet_id = self.sheet_processor(
-                        month=month,
-                        year=year,
-                        sheets=sheets,
-                        project_name=project[config.WRS_PROJECT_NAME],
-                        spreadsheet_id=spreadsheet_id)
-                    self.update_user_details(users, spreadsheet_id)
-                    self.mongodb.create_new_records(
-                        spreadsheet_id,
-                        manager=manager_info,
-                        month=month,
-                        year=year,
-                        project=project,
-                        users=users)
-            else:
-                spreadsheet_id = None
+            spreadsheet_id = self.mongodb.fetch_spreadsheet_id_and_index(
+                month,
+                year,
+                email=None,
+                project_name=project[config.WRS_PROJECT_NAME])[
+                    config.SPREADSHEET_ID]
+            if not spreadsheet_id:
+                """ Creating a new spreadsheet.... """
+                create_response = self.gsh.create_google_sheet(
+                    projectName=project[config.WRS_PROJECT_NAME],
+                    month=self.MONTHS[month - 1],
+                    year=year)
+                if create_response:
+                    spreadsheet_id = create_response["spreadsheetId"]
+                    newpid = os.fork()
+                    if newpid == 0:
+                        spreadsheet_id = self.sheet_processor(
+                            month=month,
+                            year=year,
+                            sheets=sheets,
+                            project_name=project[config.WRS_PROJECT_NAME],
+                            spreadsheet_id=spreadsheet_id)
+                        self.update_user_details(users, spreadsheet_id)
+                        self.mongodb.create_new_records(
+                            spreadsheet_id,
+                            manager=manager_info,
+                            month=month,
+                            year=year,
+                            project=project,
+                            users=users)
             response_object = {
                 "processingTime": time.time() - total_time,
                 config.SPREADSHEET_ID: spreadsheet_id
