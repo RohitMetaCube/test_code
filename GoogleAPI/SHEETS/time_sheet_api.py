@@ -7,6 +7,7 @@ from log_utils import OneLineExceptionFormatter
 import logging
 from db_utils import mongoDB
 import config
+import os
 
 
 class TimeSheetAPI:
@@ -417,17 +418,6 @@ class TimeSheetAPI:
         number_of_days_in_week_5 = number_of_days - 21 - number_of_days_in_week_1
         end_index = self.HEADER_ROWS_COUNT + 1 + self.PER_DAY_ROWS_COUNT * number_of_days
 
-        if not spreadsheet_id:
-            print "Creating a new spreadsheet...."
-            create_response = self.gsh.create_google_sheet(
-                projectName=project_name,
-                month=self.MONTHS[month - 1],
-                year=year)
-            if create_response:
-                spreadsheet_id = create_response["spreadsheetId"]
-            else:
-                return None
-
         requests = []
         for sheet_index, sheet_name in enumerate(sheets):
             if sheet_index:
@@ -640,23 +630,35 @@ class TimeSheetAPI:
         ]
         sheets.insert(0, None)
         if month and project and project[config.WRS_PROJECT_NAME]:
-            spreadsheet_id = self.sheet_processor(
-                month=month,
-                year=year,
-                sheets=sheets,
-                project_name=project[config.WRS_PROJECT_NAME])
+            print "Creating a new spreadsheet...."
+            create_response = self.gsh.create_google_sheet(
+                projectName=project[config.WRS_PROJECT_NAME],
+                month=self.MONTHS[month - 1],
+                year=year)
+            if create_response:
+                spreadsheet_id = create_response["spreadsheetId"]
+                newpid = os.fork()
+                if newpid == 0:
+                    spreadsheet_id = self.sheet_processor(
+                        month=month,
+                        year=year,
+                        sheets=sheets,
+                        project_name=project[config.WRS_PROJECT_NAME],
+                        spreadsheet_id=spreadsheet_id)
+                    self.update_user_details(users, spreadsheet_id)
+                    self.mongodb.create_new_records(
+                        spreadsheet_id,
+                        manager=manager_info,
+                        month=month,
+                        year=year,
+                        project=project,
+                        users=users)
+            else:
+                spreadsheet_id = None
             response_object = {
                 "processingTime": time.time() - total_time,
                 config.SPREADSHEET_ID: spreadsheet_id
             }
-            self.update_user_details(users, spreadsheet_id)
-            self.mongodb.create_new_records(
-                spreadsheet_id,
-                manager=manager_info,
-                month=month,
-                year=year,
-                project=project,
-                users=users)
         else:
             response_object = {"error_message": error_message}
         return response_object
