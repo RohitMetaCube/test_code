@@ -639,7 +639,7 @@ class TimeSheetAPI:
             spreadsheet_id = self.mongodb.fetch_spreadsheet_id_and_index(
                 month,
                 year,
-                email=None,
+                email=manager_info[config.WRS_EMAIL],
                 project_name=project[config.WRS_PROJECT_NAME])[
                     config.SPREADSHEET_ID]
             if not spreadsheet_id:
