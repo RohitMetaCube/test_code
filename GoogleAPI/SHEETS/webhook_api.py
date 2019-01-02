@@ -174,7 +174,8 @@ class Webhook(object):
             text = (
                 '<p>Click on this link for</br>'
                 'Registration into WRS System</br>'
-                'After successful register you can use me for</br>'
+                'After successful register</br>'
+                'you can use me for</br>'
                 'your Timesheet management Tasks</p><br>'
                 '<a target="_blank" rel="noopener noreferrer" href="http://dev-accounts.agilestructure.in/sessions/new?client_id={}&email={}&response_type=code">Please login with this url</a>'
             ).format(Webhook.CLIENT_ID, email)
