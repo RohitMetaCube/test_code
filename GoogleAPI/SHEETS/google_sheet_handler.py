@@ -131,9 +131,12 @@ class GoogleSheetHandler():
             req.execute()
 
         if remove_email:
-            id_resp = self.drive_service.permissions().getIdForEmail(
-                email=remove_email).execute()
-            permission_id = id_resp['id']
+            try:
+                id_resp = self.drive_service.permissions().getIdForEmail(
+                    email=remove_email).execute()
+                permission_id = id_resp['id']
+            except:
+                permission_id = "05176847757676616397"
             req = self.drive_service.permissions().delete(
                 fileId=spreadsheetId, permissionId=permission_id)
             req.execute()
