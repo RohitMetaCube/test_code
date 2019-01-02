@@ -172,10 +172,10 @@ class Webhook(object):
                 upsert=True,
                 multi=False)
             text = (
-                '<p>Click on that link for Registration</br>'
-                'into WRS System</br>'
-                'After that you can use me for your </br>'
-                'Timesheet management</p><br>'
+                '<p>Click on this link for</br>'
+                'Registration into WRS System</br>'
+                'After successful register you can use me for</br>'
+                'your Timesheet management Tasks</p><br>'
                 '<a target="_blank" rel="noopener noreferrer" href="http://dev-accounts.agilestructure.in/sessions/new?client_id={}&email={}&response_type=code">Please login with this url</a>'
             ).format(Webhook.CLIENT_ID, email)
             response["fulfillmentText"] = text
@@ -405,7 +405,7 @@ class Webhook(object):
                         response["fulfillmentText"] = (
                             "We are creating your Timesheet</br>"
                             "of project {}</br>"
-                            "<a href='https://docs.google.com/spreadsheets/d/{}'>at this link</a></br>"
+                            "<a target='_blank' rel='noopener noreferrer' href='https://docs.google.com/spreadsheets/d/{}'>at this link</a></br>"
                             "After Successful completion</br>"
                             "file will be shared with you</br>"
                             "on MetaCube Email").format(project_name,
@@ -520,8 +520,8 @@ class Webhook(object):
                     json=data).json()
                 if "spreadsheetID" in response and response["status"]:
                     response["fulfillmentText"] = (
-                        "Congratulation!!!</br>Your Entry marked</br>You can check it on"
-                        "<a href='https://docs.google.com/spreadsheets/d/{}'>this link</a>"
+                        "Congratulation!!!</br>Your Entry marked</br>You can check it on</br>"
+                        "<a target='_blank' rel='noopener noreferrer'  href='https://docs.google.com/spreadsheets/d/{}'>this link</a>"
                     ).format(response["spreadsheetID"])
                 elif "error_message" in response:
                     response["fulfillmentText"] = response["error_message"]
@@ -575,7 +575,7 @@ class Webhook(object):
                         "</br>Your work log added</br>"
                         "for project: {}</br>"
                         "You can check it on</br>"
-                        "<a href='https://docs.google.com/spreadsheets/d/{}'>this link</a>"
+                        "<a target='_blank' rel='noopener noreferrer' href='https://docs.google.com/spreadsheets/d/{}'>this link</a>"
                     ).format(response[config.SPREADSHEET_ID],
                              response[config.WRS_PROJECT_NAME])
                 elif "error_message" in response:
