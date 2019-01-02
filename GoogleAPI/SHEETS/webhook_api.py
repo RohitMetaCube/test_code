@@ -576,8 +576,8 @@ class Webhook(object):
                         "for project: {}</br>"
                         "You can check it on</br>"
                         "<a target='_blank' rel='noopener noreferrer' href='https://docs.google.com/spreadsheets/d/{}'>this link</a>"
-                    ).format(response[config.SPREADSHEET_ID],
-                             response[config.WRS_PROJECT_NAME])
+                    ).format(response[config.WRS_PROJECT_NAME],
+                             response[config.SPREADSHEET_ID])
                 elif "error_message" in response:
                     response["fulfillmentText"] = response["error_message"]
                 else:
