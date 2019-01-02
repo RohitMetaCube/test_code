@@ -171,12 +171,17 @@ class Webhook(object):
                 },
                 upsert=True,
                 multi=False)
-            text = '<a target="_blank" rel="noopener noreferrer" href="http://dev-accounts.agilestructure.in/sessions/new?client_id={}&email={}&response_type=code">Please login with this url</a>'.format(
-                Webhook.CLIENT_ID, email)
+            text = (
+                '<p>Click on that link for Registration</br>'
+                'into WRS System</br>'
+                'After that you can use me for your </br>'
+                'Timesheet management</p><br>'
+                '<a target="_blank" rel="noopener noreferrer" href="http://dev-accounts.agilestructure.in/sessions/new?client_id={}&email={}&response_type=code">Please login with this url</a>'
+            ).format(Webhook.CLIENT_ID, email)
             response["fulfillmentText"] = text
         else:
             response[
-                "fulfillmentText"] = "Unable to Logging (Missing Parameters <email> or <session>)"
+                "fulfillmentText"] = "Unable to Logging</br>(Missing Parameters <email> or <session>)"
         return response
 
     def get_user_info(self, *args, **kwargs):
@@ -193,8 +198,12 @@ class Webhook(object):
                 WRS_ACCESS_TOKEN] if config.WRS_ACCESS_TOKEN in elem else None
             user_info = elem[
                 config.WRS_USER_INFO] if config.WRS_USER_INFO in elem else {}
-            response[
-                "fulfillmentText"] = "name: {}, id: {}, uuid: {}, email: {}, access_token: {}".format(
+            response["fulfillmentText"] = (
+                "<ul><li>name: {}</li>"
+                "<li>id: {}</li>"
+                "<li>uuid: {}</li>"
+                "<li>email: {}</li>"
+                "<li>access_token: {}</li></ul>").format(
                     user_info[config.WRS_USER_NAME]
                     if config.WRS_USER_NAME in user_info else None,
                     user_info[config.WRS_USER_ID]
@@ -393,19 +402,25 @@ class Webhook(object):
                         spreadsheet_id = response[
                             config.
                             SPREADSHEET_ID] if config.SPREADSHEET_ID in response else None
-                        response[
-                            "fulfillmentText"] = "Hey Buddy Say Thanks to me! Your spreadsheetID is {} for project {}".format(
-                                spreadsheet_id, project_name)
+                        response["fulfillmentText"] = (
+                            "We are creating your Timesheet</br>"
+                            "of project {}</br>"
+                            "<a href='https://docs.google.com/spreadsheets/d/{}'>at this link</a></br>"
+                            "After Successful completion</br>"
+                            "file will be shared with you</br>"
+                            "on MetaCube Email").format(project_name,
+                                                        spreadsheet_id)
                     else:
                         response[
                             "fulfillmentText"] = "Sorry !!! We did not have your Email Address"
                 else:
                     response[
-                        "fulfillmentText"] = "Sorry!!! You are not a Manager for project '{}'".format(
+                        "fulfillmentText"] = "Sorry!!! You are not a Manager</br>for project '{}'".format(
                             project_name)
             else:
-                response[
-                    "fulfillmentText"] = "Your Project Name not found in our DB. If Possible please rephrase it."
+                response["fulfillmentText"] = (
+                    "Your Project Name not found in our DB.</br>"
+                    "If Possible please rephrase it.")
         else:
             response["fulfillmentText"] = "Please Login First then try."
         return response
@@ -452,18 +467,19 @@ class Webhook(object):
                             config.
                             SPREADSHEET_ID] if config.SPREADSHEET_ID in response else None
                         response[
-                            "fulfillmentText"] = "Successfully Removed spreadsheetID {} of project {}".format(
+                            "fulfillmentText"] = "Successfully Removed {}'s Time-sheet from our system.".format(
                                 spreadsheet_id, project_name)
                     else:
                         response[
                             "fulfillmentText"] = "Sorry !!! We did not have your Email Address"
                 else:
                     response[
-                        "fulfillmentText"] = "Sorry!!! You are not a Manager for project '{}'".format(
+                        "fulfillmentText"] = "Sorry!!! You are not a Manager</br>for project '{}'".format(
                             project_name)
             else:
-                response[
-                    "fulfillmentText"] = "Your Project Name not found in our DB. If Possible please rephrase it."
+                response["fulfillmentText"] = (
+                    "Your Project Name not found in our DB.</br>"
+                    "If Possible please rephrase it.")
         else:
             response["fulfillmentText"] = "Please Login First then try."
         return response
@@ -503,14 +519,16 @@ class Webhook(object):
                     headers=self.headers,
                     json=data).json()
                 if "spreadsheetID" in response and response["status"]:
-                    response[
-                        "fulfillmentText"] = "Congratulation!!! Your Entry marked in spreadsheetID: {}".format(
-                            response["spreadsheetID"])
+                    response["fulfillmentText"] = (
+                        "Congratulation!!!</br>Your Entry marked</br>You can check it on"
+                        "<a href='https://docs.google.com/spreadsheets/d/{}'>this link</a>"
+                    ).format(response["spreadsheetID"])
                 elif "error_message" in response:
                     response["fulfillmentText"] = response["error_message"]
                 else:
-                    response[
-                        "fulfillmentText"] = "Sorry I am unable to mark your entry please provide some more accurate details."
+                    response["fulfillmentText"] = (
+                        "Sorry I am unable to mark your entry"
+                        "please provide some more accurate details.")
             else:
                 response[
                     "fulfillmentText"] = "Project Name {} Not Matched with Employee {}".format(
@@ -552,15 +570,20 @@ class Webhook(object):
                     headers=self.headers,
                     json=data).json()
                 if config.SPREADSHEET_ID in response:
-                    response[
-                        "fulfillmentText"] = "Congratulation!!! Your work log added in spreadsheetID: {} for project: {}".format(
-                            response[config.SPREADSHEET_ID],
-                            response[config.WRS_PROJECT_NAME])
+                    response["fulfillmentText"] = (
+                        "Congratulation!!!"
+                        "</br>Your work log added</br>"
+                        "for project: {}</br>"
+                        "You can check it on</br>"
+                        "<a href='https://docs.google.com/spreadsheets/d/{}'>this link</a>"
+                    ).format(response[config.SPREADSHEET_ID],
+                             response[config.WRS_PROJECT_NAME])
                 elif "error_message" in response:
                     response["fulfillmentText"] = response["error_message"]
                 else:
-                    response[
-                        "fulfillmentText"] = "Sorry I am unable to add your entry please provide some more accurate details."
+                    response["fulfillmentText"] = (
+                        "Sorry I am unable to add your entry</br>"
+                        "please provide some more accurate details.")
             else:
                 response[
                     "fulfillmentText"] = "Project Name {} Not Matched with Employee {}".format(
