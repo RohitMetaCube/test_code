@@ -408,7 +408,7 @@ class Webhook(object):
                             "of project {}</br>"
                             "<a target='_blank' rel='noopener noreferrer' href='https://docs.google.com/spreadsheets/d/{}'>at this link</a></br>"
                             "After Successful completion</br>"
-                            "file will be shared with you</br>"
+                            "file will share it with you</br>"
                             "on MetaCube Email").format(project_name,
                                                         spreadsheet_id)
                     else:
