@@ -267,6 +267,8 @@ class Webhook(object):
             response["fulfillmentText"] = "<ul><li>{}</li></ul>".format(
                 "</li><li>".join(project[config.WRS_PROJECT_NAME]
                                  for project in projects))
+        else:
+            response["fulfillmentText"] = "Please Login First then try."
         return response
 
     def get_projects_of_an_employee(self, user_id, wrs_access_token):
