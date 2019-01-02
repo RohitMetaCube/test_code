@@ -224,7 +224,7 @@ class Webhook(object):
         elem = self.mongo.db[config.ACCESS_TOKENS].find_one({
             config.DIALOG_FLOW_SESSION_ID: session_id
         }, {config.WRS_ACCESS_TOKEN: 1})
-        wrs_access_token = elem[config.WRS_ACCESS_TOKEN] if elem else None
+        wrs_access_token = elem[config.WRS_ACCESS_TOKEN] if elem and config.WRS_ACCESS_TOKEN in elem else None
 
         response = {}
         if wrs_access_token:
