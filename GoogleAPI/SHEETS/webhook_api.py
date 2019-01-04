@@ -12,6 +12,7 @@ import time
 import socket
 import string
 import random
+from BeautifulSoup import BeautifulSoup
 
 
 def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
@@ -224,7 +225,9 @@ class Webhook(object):
         elem = self.mongo.db[config.ACCESS_TOKENS].find_one({
             config.DIALOG_FLOW_SESSION_ID: session_id
         }, {config.WRS_ACCESS_TOKEN: 1})
-        wrs_access_token = elem[config.WRS_ACCESS_TOKEN] if elem and config.WRS_ACCESS_TOKEN in elem else None
+        wrs_access_token = elem[
+            config.
+            WRS_ACCESS_TOKEN] if elem and config.WRS_ACCESS_TOKEN in elem else None
 
         response = {}
         if wrs_access_token:
@@ -559,34 +562,66 @@ class Webhook(object):
             matching_project = self.get_matching_project(
                 project_name, wrs_access_token, user_info)
             if matching_project:
-                iAmAdmin = False
-                if self.get_manager_of_project(
-                        matching_project[config.WRS_PROJECT_ID],
-                        wrs_access_token,
-                        user_info) == user_info[config.WRS_USER_UUID]:
-                    iAmAdmin = True
-                data[TimeSheetAPI.I_AM_MANAGER] = iAmAdmin
-                data[TimeSheetAPI.PROJECT_PARAMETER] = matching_project
-                data[TimeSheetAPI.USER_INFO_PARAMETER] = user_info
-                response = requests.post(
-                    "http://0.0.0.0:8080/timeSheet/add_work_log",
-                    headers=self.headers,
-                    json=data).json()
-                if config.SPREADSHEET_ID in response:
-                    response["fulfillmentText"] = (
-                        "Congratulation!!!"
-                        "</br>Your work log added</br>"
-                        "for project: {}</br>"
-                        "You can check it on</br>"
-                        "<a target='_blank' rel='noopener noreferrer' href='https://docs.google.com/spreadsheets/d/{}'>this link</a>"
-                    ).format(response[config.WRS_PROJECT_NAME],
-                             response[config.SPREADSHEET_ID])
-                elif "error_message" in response:
-                    response["fulfillmentText"] = response["error_message"]
+                required_params = [
+                    TimeSheetAPI.PROJECT_NAME_PARAMETER,
+                    TimeSheetAPI.WORK_DATE_PARAMETER,
+                    TimeSheetAPI.MONTH_PARAMETER, TimeSheetAPI.YEAR_PARAMETER,
+                    TimeSheetAPI.WORKING_HOURS, TimeSheetAPI.WORK_DETAILS
+                ]
+                if any(rp not in data or not data[rp]
+                       for rp in required_params):
+                    session_tag = BeautifulSoup(
+                        '<input type="hidden"  name="{}" value="{}" />'.format(
+                            Webhook.DIALOGFLOW_SESSION_PARAMETER, session_id))
+                    option_tag = BeautifulSoup(
+                        "<option value='{}'>{}</option>".format(project_name,
+                                                                project_name))
+                    soup = BeautifulSoup(open("templates/work_log.html"))
+                    for rp in required_params:
+                        try:
+                            m = soup.find('', {'name': rp})
+                            m.value = data[rp] if rp in data else ""
+                        except Exception as e:
+                            logging.info("Parameter: {}, error: {}".format(rp,
+                                                                           e))
+
+                    #soup = BeautifulSoup(str(soup))
+                    m1 = soup.find('div', {'name': 'hidden_params'})
+                    m2 = soup.find('select', {"name": 'taskType'})
+                    # Add Session Id
+                    m1.append(session_tag)
+                    # Add Option
+                    m2.append(option_tag)
+                    response["fulfillmentText"] = str(soup)
                 else:
-                    response["fulfillmentText"] = (
-                        "Sorry I am unable to add your entry</br>"
-                        "please provide some more accurate details.")
+                    iAmAdmin = False
+                    if self.get_manager_of_project(
+                            matching_project[config.WRS_PROJECT_ID],
+                            wrs_access_token,
+                            user_info) == user_info[config.WRS_USER_UUID]:
+                        iAmAdmin = True
+                    data[TimeSheetAPI.I_AM_MANAGER] = iAmAdmin
+                    data[TimeSheetAPI.PROJECT_PARAMETER] = matching_project
+                    data[TimeSheetAPI.USER_INFO_PARAMETER] = user_info
+                    response = requests.post(
+                        "http://0.0.0.0:8080/timeSheet/add_work_log",
+                        headers=self.headers,
+                        json=data).json()
+                    if config.SPREADSHEET_ID in response:
+                        response["fulfillmentText"] = (
+                            "Congratulation!!!"
+                            "</br>Your work log added</br>"
+                            "for project: {}</br>"
+                            "You can check it on</br>"
+                            "<a target='_blank' rel='noopener noreferrer' href='https://docs.google.com/spreadsheets/d/{}'>this link</a>"
+                        ).format(response[config.WRS_PROJECT_NAME],
+                                 response[config.SPREADSHEET_ID])
+                    elif "error_message" in response:
+                        response["fulfillmentText"] = response["error_message"]
+                    else:
+                        response["fulfillmentText"] = (
+                            "Sorry I am unable to add your entry</br>"
+                            "please provide some more accurate details.")
             else:
                 response[
                     "fulfillmentText"] = "Project Name {} Not Matched with Employee {}".format(
@@ -598,8 +633,8 @@ class Webhook(object):
         return response
 
     @cherrypy.expose
-    @cherrypy.tools.json_out()
     @cherrypy.tools.json_in()
+    @cherrypy.tools.json_out()
     def webhook(self):
         cherrypy.response.headers['Content-Type'] = "application/json"
         cherrypy.response.headers['Connection'] = "close"
@@ -637,6 +672,23 @@ class Webhook(object):
 
     @cherrypy.expose
     @cherrypy.tools.json_out()
+    def form_webhook(self, *args, **kwargs):
+        cherrypy.response.headers['Content-Type'] = "application/json"
+        cherrypy.response.headers['Connection'] = "close"
+
+        params = cherrypy.request.params
+
+        response = {}
+        if "source" in params and "intent" in params:
+            response["fulfillmentText"] = self.intent_map[params["intent"]](
+                params=params)["fulfillmentText"]
+        else:
+            response = self.sorry()
+
+        return response
+
+    @cherrypy.expose
+    @cherrypy.tools.json_out()
     def monitor(self):
         cherrypy.response.headers['Content-Type'] = "application/json"
         cherrypy.response.headers['Connection'] = "close"
@@ -647,6 +699,23 @@ class Webhook(object):
             "threadId": thread_id
         }
         return response_json
+
+
+class botUI(object):
+    def __init__(self):
+        ''
+
+    @cherrypy.expose
+    def home(self):
+        return open("UI/index.html")
+
+    @cherrypy.expose
+    def mbot(self):
+        return open("UI/mbot.html")
+
+    @cherrypy.expose
+    def agentDomJs(self):
+        return open("UI/jscripts/agentDemo.bundle.min.js")
 
 
 if __name__ == "__main__":
@@ -675,6 +744,10 @@ if __name__ == "__main__":
     cherrypy.tree.mount(
         Webhook(),
         '/wrs',  #configurator.commons.JOB_NORMALIZATION_API_CONTEXT,
+        config={'/': {}})
+    cherrypy.tree.mount(
+        botUI(),
+        '/',  #configurator.commons.JOB_NORMALIZATION_API_CONTEXT,
         config={'/': {}})
     cherrypy.engine.start()
     cherrypy.engine.block()

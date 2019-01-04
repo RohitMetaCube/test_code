@@ -4,7 +4,7 @@
 <html>
 <head>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
-	<meta name="referrer" content="no-referrer">
+	<meta name="referrer" content="no-referrer" http-equiv="X-Frame-Options" content="allow-from https://console.dialogflow.com/api-client/demo/embedded/6270f78e-fb60-48de-9025-bc744fda9514">
     <title>Timesheet Bot</title>
     <style>
 
@@ -215,7 +215,9 @@
 		<p>rohit.kumar@metacube.com</p>
             </div>
             <div class="col-md-6">
-                <iframe id="frame" class="b_frame" allow="microphone;" src="https://console.dialogflow.com/api-client/demo/embedded/6270f78e-fb60-48de-9025-bc744fda9514"></iframe>
+                <iframe id="frame" class="b_frame" allow="microphone;" src="/mbot"></iframe>
+            </div>
+            <div id="load-content">
             </div>
         </div>
     </div>
@@ -224,13 +226,6 @@
 
 <script>
     
-        // after the page elements are all loaded, then run the script
-        // Set the input field with unique ID #email to a value
-
-        $('document').ready(function() {
-          $('input').val('rohit.kumar@metacube.com')
-        })
-
         var x = document.getElementById("frame");
         var txt = "";
         var i;
@@ -239,7 +234,14 @@
         }
         document.getElementById("demo").innerHTML = txt;
         //$("#query").val('someone@test.com');
-            
+        
+        $.ajax({
+          url: "http://13.59.133.238:443/wrs/webhook"
+        }).done(function(data) {
+          console.log(data);
+        });
+
+        
 </script>
 
 
