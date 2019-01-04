@@ -832,7 +832,7 @@ class TimeSheetAPI:
             int) if TimeSheetAPI.WORK_DATE_PARAMETER in params else None
         workingHours = self.type_converter(
             params[TimeSheetAPI.WORKING_HOURS],
-            float) if TimeSheetAPI.WORKING_HOURS in params else None
+            float) if TimeSheetAPI.WORKING_HOURS in params else 0
         taskDetails = params[
             TimeSheetAPI.
             WORK_DETAILS] if TimeSheetAPI.WORK_DETAILS in params else ''
@@ -902,10 +902,8 @@ class TimeSheetAPI:
                     email=user_info[config.WRS_EMAIL],
                     date=workDate)
                 existing_data = [[
-                    xd[config.TASK_TYPE_FIELD], "{}: {}".format(
-                        xd[config.JIRA_TICKET_NUMBER], xd[config.TASK_FIELD])
-                    if xd[config.JIRA_TICKET_NUMBER] else
-                    xd[config.TASK_FIELD], xd[config.WORKING_HOURS]
+                    xd[config.TASK_TYPE_FIELD], xd[config.TASK_FIELD],
+                    xd[config.WORKING_HOURS]
                 ] for xd in existing_data]
                 if len(existing_data) < self.PER_DAY_ROWS_COUNT:
                     existing_data.append([taskType, taskDetails, workingHours])
@@ -917,10 +915,10 @@ class TimeSheetAPI:
                 else:
                     existing_data[self.PER_DAY_ROWS_COUNT - 1] = [
                         existing_data[self.PER_DAY_ROWS_COUNT - 1][0],
-                        '\n'.join(per_day_existing_data[0]
+                        '\n'.join(per_day_existing_data[1]
                                   for per_day_existing_data in existing_data[
                                       self.PER_DAY_ROWS_COUNT - 1:]),
-                        sum(per_day_existing_data[1]
+                        sum(per_day_existing_data[2]
                             for per_day_existing_data in existing_data[
                                 self.PER_DAY_ROWS_COUNT - 1:])
                     ]
