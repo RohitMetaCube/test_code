@@ -565,7 +565,6 @@ class Webhook(object):
                 required_params = [
                     TimeSheetAPI.PROJECT_NAME_PARAMETER,
                     TimeSheetAPI.WORK_DATE_PARAMETER,
-                    TimeSheetAPI.MONTH_PARAMETER, TimeSheetAPI.YEAR_PARAMETER,
                     TimeSheetAPI.WORKING_HOURS, TimeSheetAPI.WORK_DETAILS
                 ]
                 if any(rp not in data or not data[rp]
@@ -577,12 +576,12 @@ class Webhook(object):
                         "<option value='{}'>{}</option>".format(project_name,
                                                                 project_name))
                     soup = BeautifulSoup(open("templates/work_log.html"))
-                    for rp in required_params:
+                    for k, v in data.items():
                         try:
-                            m = soup.find('', {'name': rp})
-                            m.value = data[rp] if rp in data else ""
+                            m = soup.find('', {'name': k})
+                            m["value"] = v
                         except Exception as e:
-                            logging.info("Parameter: {}, error: {}".format(rp,
+                            logging.info("Parameter: {}, error: {}".format(k,
                                                                            e))
 
                     #soup = BeautifulSoup(str(soup))
