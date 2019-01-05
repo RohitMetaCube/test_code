@@ -177,8 +177,9 @@ class Webhook(object):
                 'Registration into WRS System</br>'
                 'After successful register</br>'
                 'you can use me for</br>'
-                'your Timesheet management Tasks</p><br>'
-                '<a target="_blank" rel="noopener noreferrer" href="http://dev-accounts.agilestructure.in/sessions/new?client_id={}&email={}&response_type=code">Please login with this url</a>'
+                'your Timesheet management Tasks<br>'
+                '<a target="_blank" rel="noopener noreferrer" href="http://dev-accounts.agilestructure.in/sessions/new?client_id={}&email={}&response_type=code">Please login with this url</a><br>'
+                '(<b>Note:</b> you will be taken to a new tab<br>and after completing the login<br>you can come back to the bot window.)</p>'
             ).format(Webhook.CLIENT_ID, email)
             response["fulfillmentText"] = text
         else:
