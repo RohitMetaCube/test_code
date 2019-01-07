@@ -195,7 +195,8 @@ class Webhook(object):
         elem = self.mongo.db[config.ACCESS_TOKENS].find_one({
             config.DIALOG_FLOW_SESSION_ID: session_id
         })
-        if elem:
+        if elem and config.WRS_ACCESS_TOKEN in elem and elem[
+                config.WRS_ACCESS_TOKEN]:
             wrs_access_token = elem[
                 config.
                 WRS_ACCESS_TOKEN] if config.WRS_ACCESS_TOKEN in elem else None
@@ -253,6 +254,9 @@ class Webhook(object):
                 })
         else:
             response["fulfillmentText"] = "You are already logged out."
+            self.mongo.db[config.ACCESS_TOKENS].remove({
+                config.DIALOG_FLOW_SESSION_ID: session_id
+            })
         return response
 
     def get_project_names(self, *args, **kwargs):
@@ -263,7 +267,8 @@ class Webhook(object):
             config.DIALOG_FLOW_SESSION_ID: session_id
         })
         response = {}
-        if elem and config.WRS_ACCESS_TOKEN in elem:
+        if elem and config.WRS_ACCESS_TOKEN in elem and elem[
+                config.WRS_ACCESS_TOKEN]:
             wrs_access_token = elem[config.WRS_ACCESS_TOKEN]
             user_info = elem[config.WRS_USER_INFO]
             projects = self.get_projects_of_an_employee(
@@ -378,7 +383,8 @@ class Webhook(object):
             config.DIALOG_FLOW_SESSION_ID: session_id
         })
         response = {}
-        if elem:
+        if elem and config.WRS_ACCESS_TOKEN in elem and elem[
+                config.WRS_ACCESS_TOKEN]:
             wrs_access_token = elem[config.WRS_ACCESS_TOKEN]
             user_info = elem[config.WRS_USER_INFO]
 
@@ -447,7 +453,8 @@ class Webhook(object):
             config.DIALOG_FLOW_SESSION_ID: session_id
         })
         response = {}
-        if elem:
+        if elem and config.WRS_ACCESS_TOKEN in elem and elem[
+                config.WRS_ACCESS_TOKEN]:
             wrs_access_token = elem[config.WRS_ACCESS_TOKEN]
             user_info = elem[config.WRS_USER_INFO]
 
@@ -499,7 +506,8 @@ class Webhook(object):
             config.DIALOG_FLOW_SESSION_ID: session_id
         })
         response = {}
-        if elem:
+        if elem and config.WRS_ACCESS_TOKEN in elem and elem[
+                config.WRS_ACCESS_TOKEN]:
             wrs_access_token = elem[config.WRS_ACCESS_TOKEN]
             user_info = elem[config.WRS_USER_INFO]
 
@@ -554,7 +562,8 @@ class Webhook(object):
             config.DIALOG_FLOW_SESSION_ID: session_id
         })
         response = {}
-        if elem:
+        if elem and config.WRS_ACCESS_TOKEN in elem and elem[
+                config.WRS_ACCESS_TOKEN]:
             wrs_access_token = elem[config.WRS_ACCESS_TOKEN]
             user_info = elem[config.WRS_USER_INFO]
 
