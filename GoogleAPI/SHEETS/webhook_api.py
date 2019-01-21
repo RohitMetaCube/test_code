@@ -4,12 +4,12 @@ from utils.intent_utils import Utils
 from config import config
 import logging
 import sys
-import json
 from collections import defaultdict
 import time
 import socket
 import string
 import random
+from UI.bot_api import botUI
 
 
 def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
@@ -114,23 +114,6 @@ class Webhook(object):
             "threadId": thread_id
         }
         return response_json
-
-
-class botUI(object):
-    def __init__(self):
-        ''
-
-    @cherrypy.expose
-    def home(self):
-        return open("UI/index.html")
-
-    @cherrypy.expose
-    def mbot(self):
-        return open("UI/mbot.html")
-
-    @cherrypy.expose
-    def agentDomJs(self):
-        return open("UI/jscripts/agentDemo.bundle.min.js")
 
 
 if __name__ == "__main__":
