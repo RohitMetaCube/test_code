@@ -11,8 +11,8 @@ class Login(object):
     EMAIL_PARAMETER = "email"
     DIALOGFLOW_SESSION_PARAMETER = "session"
 
-    def __init__(self):
-        ''
+    def __init__(self, mongo):
+        self.mongo = mongo
 
     def access(self, params):
         response_data = {}

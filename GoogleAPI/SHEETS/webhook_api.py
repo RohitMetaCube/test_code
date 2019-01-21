@@ -33,7 +33,13 @@ class Webhook(object):
     DIALOGFLOW_SESSION_PARAMETER = "session"
 
     def __init__(self):
-        self.login_obj = Login()
+        self.mongo = mongoDB()
+        self.mongo.ensure_indexes(
+            config.ACCESS_TOKENS,
+            index_list=[
+                config.DIALOG_FLOW_SESSION_ID, config.WRS_ACCESS_TOKEN
+            ])
+        self.login_obj = Login(self.mongo)
         self.intent_map = {
             'Welcome': self.hello,
             'Webhook Test': self.test_webhook,
@@ -53,12 +59,6 @@ class Webhook(object):
             'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.96 Safari/537.36',
             "accept-language": "*"
         }
-        self.mongo = mongoDB()
-        self.mongo.ensure_indexes(
-            config.ACCESS_TOKENS,
-            index_list=[
-                config.DIALOG_FLOW_SESSION_ID, config.WRS_ACCESS_TOKEN
-            ])
         root.info("API Start Time= {}s".format(time.time() -
                                                Webhook.api_start_time))
 
