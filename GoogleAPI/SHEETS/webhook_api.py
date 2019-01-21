@@ -39,33 +39,6 @@ class Webhook(object):
             msg = "Unusual Exception Occured ::: {}".format(e)
         return msg
 
-    def hello(self, *argv, **kwargs):
-        msg = "Hello from APIAI Webhook Integration."
-        response = {}
-        response["fulfillmentText"] = msg
-        #response["fulfillmentMessages"] = [{'text': {'text': [msg]}}]
-        return response
-
-    def version(self, *argv, **kwargs):
-        msg = "APIAI Webhook Integration. Version 2.0"
-        response = {}
-        response["fulfillmentText"] = msg
-        #response["fulfillmentMessages"] = [{'text': {'text': [msg]}}]
-        return response
-
-    def test_webhook(self, *argv, **kwargs):
-        msg = json.dumps({
-            "speech": "Thank You for choosing python-webhook",
-            "displayText": "I am in python-webhook",
-            "source": "Timesheet ChatBot",
-            "receivedContent": kwargs["params"] if "params" in kwargs else {}
-        })
-        response = {}
-        response["fulfillmentText"] = msg
-        #response["fulfillmentMessages"] = [{'text': {'text': [msg]}}]
-        print response
-        return response
-
     def sorry(self, *argv, **kwargs):
         response = {}
         response[

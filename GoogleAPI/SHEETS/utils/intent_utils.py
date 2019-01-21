@@ -28,9 +28,6 @@ class Utils(object):
         self.mark_entry = MarkEntry(self.mongo, self.user_projects)
 
         self.intent_map = {
-            'Welcome': self.hello,
-            'Webhook Test': self.test_webhook,
-            'Version': self.version,
             'User Login': self.user_login,
             'Get User Info': self.user_info,
             'Create Timesheet': self.create_sheet,
