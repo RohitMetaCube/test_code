@@ -6,7 +6,7 @@ import sys
 from log_utils import OneLineExceptionFormatter
 import logging
 from db_utils import mongoDB
-import config
+from config import config
 import os
 
 

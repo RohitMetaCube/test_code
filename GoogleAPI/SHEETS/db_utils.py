@@ -1,5 +1,5 @@
 from pymongo import MongoClient, ASCENDING
-import config
+from config import config
 
 
 class mongoDB:
