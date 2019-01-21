@@ -1,23 +1,15 @@
 import cherrypy
-from log_utils import OneLineExceptionFormatter
+from utils.log_utils import OneLineExceptionFormatter
+from utils.intent_utils import Utils
 from config import config
 import logging
 import sys
 import json
 from collections import defaultdict
-from db_utils import mongoDB
 import time
 import socket
 import string
 import random
-from intents.login import Login
-from intents.logout import Logout
-from intents.user_info import UserInfo
-from intents.projects import Projects
-from intents.create import CreateProject
-from intents.remove import RemoveProject
-from intents.add_log import AddWorkLog
-from intents.mark_entry import MarkEntry
 
 
 def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
@@ -31,40 +23,7 @@ class Webhook(object):
     DIALOGFLOW_SESSION_PARAMETER = config.DIALOGFLOW_SESSION_PARAMETER
 
     def __init__(self):
-        self.mongo = mongoDB()
-        self.mongo.ensure_indexes(
-            config.ACCESS_TOKENS,
-            index_list=[
-                config.DIALOG_FLOW_SESSION_ID, config.WRS_ACCESS_TOKEN
-            ])
-        self.user_login = Login(self.mongo)
-        self.user_logout = Logout(self.mongo)
-        self.user_info = UserInfo(self.mongo)
-        self.user_projects = Projects(self.mongo)
-        self.create_sheet = CreateProject(self.mongo, self.user_projects)
-        self.remove_sheet = RemoveProject(self.mongo, self.user_projects)
-        self.add_work_log = AddWorkLog(self.mongo, self.user_projects)
-        self.mark_entry = MarkEntry(self.mongo, self.user_projects)
-
-        self.intent_map = {
-            'Welcome': self.hello,
-            'Webhook Test': self.test_webhook,
-            'Version': self.version,
-            'User Login': self.user_login,
-            'Get User Info': self.user_info,
-            'Create Timesheet': self.create_sheet,
-            'Remove Timesheet': self.remove_sheet,
-            'Add Work Log': self.add_work_log,
-            'Mark Entry': self.mark_entry,
-            'User Logout': self.user_logout,
-            'Project Names': self.user_projects
-        }
-        self.headers = {
-            'content-type': 'application/json',
-            'User-Agent':
-            'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.96 Safari/537.36',
-            "accept-language": "*"
-        }
+        self.utils = Utils()
         root.info("API Start Time= {}s".format(time.time() -
                                                Webhook.api_start_time))
 
@@ -75,7 +34,7 @@ class Webhook(object):
 
         try:
             params = cherrypy.request.params
-            msg = self.user_login.access(params)
+            msg = self.utils.user_login.access(params)
         except Exception as e:
             msg = "Unusual Exception Occured ::: {}".format(e)
         return msg
@@ -130,7 +89,7 @@ class Webhook(object):
                 "queryResult"] and "displayName" in params["queryResult"][
                     "intent"]:
             intent_name = params["queryResult"]["intent"]["displayName"]
-            if intent_name in self.intent_map:
+            if intent_name in self.utils.intent_map:
                 session_id = params[Webhook.DIALOGFLOW_SESSION_PARAMETER]
                 if "outputContexts" in params[
                         "queryResult"] and 'parameters' in params[
@@ -143,7 +102,7 @@ class Webhook(object):
                     data = {}
                 data.update({Webhook.DIALOGFLOW_SESSION_PARAMETER: session_id})
                 response = {}
-                response["fulfillmentText"] = self.intent_map[
+                response["fulfillmentText"] = self.utils.intent_map[
                     intent_name].apply(params=data)["fulfillmentText"]
             else:
                 response = self.sorry("Intent not specified in Webhook ::: {}".
@@ -163,7 +122,7 @@ class Webhook(object):
 
         response = {}
         if "source" in params and "intent" in params:
-            response["fulfillmentText"] = self.intent_map[params[
+            response["fulfillmentText"] = self.utils.intent_map[params[
                 "intent"]].apply(params=params)["fulfillmentText"]
         else:
             response = self.sorry()
