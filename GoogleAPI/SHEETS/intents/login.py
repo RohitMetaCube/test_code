@@ -1,10 +1,10 @@
 import requests
-import config
+from config import config
 
 
 class Login(object):
-    CLIENT_ID = "4ljR9SXowb_mHGOiqo45hA"
-    CLIENT_SECRET = "7uhCPLOLDpBm87rokO8ORw"
+    CLIENT_ID = 'hIUUAOheNi7Sp0GpmOOryA'  #"4ljR9SXowb_mHGOiqo45hA"
+    CLIENT_SECRET = '6SahZHtP2AE4xyD1pi-4Bg'  #"7uhCPLOLDpBm87rokO8ORw"
     CLIENT_ID_PARAMETER = 'client_id'
     CODE_PARAMETER = 'code'
     ACCESS_TOKEN_PARAMETER = 'access_token'
