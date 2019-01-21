@@ -39,7 +39,7 @@ class Webhook(object):
             ])
         self.user_login = Login(self.mongo)
         self.user_logout = Logout(self.mongo)
-        self.user_info = UserInfo()
+        self.user_info = UserInfo(self.mongo)
         self.user_projects = Projects(self.mongo)
         self.create_sheet = CreateProject(self.mongo, self.user_projects)
         self.remove_sheet = RemoveProject(self.mongo, self.user_projects)
