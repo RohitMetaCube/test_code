@@ -50,3 +50,18 @@ WRS_EMPLOYEE_EMAIL = "employee_email"
 
 # GLOBAL MANAGER
 GLOBAL_MANAGER = "rohit.kumar@metacube.com"
+
+# Credentials
+CLIENT_ID = 'hIUUAOheNi7Sp0GpmOOryA'  #"4ljR9SXowb_mHGOiqo45hA"
+CLIENT_SECRET = '6SahZHtP2AE4xyD1pi-4Bg'  #"7uhCPLOLDpBm87rokO8ORw"
+CLIENT_ID_PARAMETER = 'client_id'
+CODE_PARAMETER = 'code'
+ACCESS_TOKEN_PARAMETER = 'access_token'
+EMAIL_PARAMETER = "email"
+DIALOGFLOW_SESSION_PARAMETER = "session"
+REQUEST_HEADERS = {
+    'content-type': 'application/json',
+    'User-Agent':
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.96 Safari/537.36',
+    "accept-language": "*"
+}

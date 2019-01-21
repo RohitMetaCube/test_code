@@ -3,13 +3,13 @@ from config import config
 
 
 class Login(object):
-    CLIENT_ID = 'hIUUAOheNi7Sp0GpmOOryA'  #"4ljR9SXowb_mHGOiqo45hA"
-    CLIENT_SECRET = '6SahZHtP2AE4xyD1pi-4Bg'  #"7uhCPLOLDpBm87rokO8ORw"
-    CLIENT_ID_PARAMETER = 'client_id'
-    CODE_PARAMETER = 'code'
-    ACCESS_TOKEN_PARAMETER = 'access_token'
-    EMAIL_PARAMETER = "email"
-    DIALOGFLOW_SESSION_PARAMETER = "session"
+    CLIENT_ID = config.CLIENT_ID
+    CLIENT_SECRET = config.CLIENT_SECRET
+    CLIENT_ID_PARAMETER = config.CLIENT_ID_PARAMETER
+    CODE_PARAMETER = config.CODE_PARAMETER
+    ACCESS_TOKEN_PARAMETER = config.ACCESS_TOKEN_PARAMETER
+    EMAIL_PARAMETER = config.EMAIL_PARAMETER
+    DIALOGFLOW_SESSION_PARAMETER = config.DIALOGFLOW_SESSION_PARAMETER
 
     def __init__(self, mongo):
         self.mongo = mongo
@@ -102,7 +102,7 @@ class Login(object):
             msg += "</table>"
         return msg
 
-    def user_login(self, *args, **kwargs):
+    def apply(self, *args, **kwargs):
         session_id = None if Login.DIALOGFLOW_SESSION_PARAMETER not in kwargs[
             'params'] else kwargs['params'][Login.DIALOGFLOW_SESSION_PARAMETER]
         email = None if Login.EMAIL_PARAMETER not in kwargs[
