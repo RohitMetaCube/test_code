@@ -4,6 +4,9 @@ from config import config
 class UserInfo(object):
     DIALOGFLOW_SESSION_PARAMETER = config.DIALOGFLOW_SESSION_PARAMETER
 
+    def __init__(self, mongo):
+        self.mongo = mongo
+
     def apply(self, *args, **kwargs):
         session_id = None if UserInfo.DIALOGFLOW_SESSION_PARAMETER not in kwargs[
             'params'] else kwargs['params'][
