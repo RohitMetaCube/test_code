@@ -66,8 +66,8 @@ class AddWorkLog(object):
                     iAmAdmin = False
                     if self.project_obj.get_manager_of_project(
                             matching_project[config.WRS_PROJECT_ID],
-                            wrs_access_token,
-                            user_info) == user_info[config.WRS_USER_UUID]:
+                            wrs_access_token)[config.WRS_UUID] == user_info[
+                                config.WRS_USER_UUID]:
                         iAmAdmin = True
                     data[TimeSheetAPI.I_AM_MANAGER] = iAmAdmin
                     data[TimeSheetAPI.PROJECT_PARAMETER] = matching_project

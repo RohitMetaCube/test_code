@@ -16,13 +16,13 @@ class Projects(object):
         r = r.json()
         return r
 
-    def get_manager_of_project(self, project_id, wrs_access_token, user_info):
+    def get_manager_of_project(self, project_id, wrs_access_token):
         r = requests.get(
             "http://dev-services.agilestructure.in/api/v1/groups/{}/manager.json".
             format(project_id),
             headers={"Authorization": wrs_access_token},
             params={"group_id": project_id})
-        r = r.json()[config.WRS_UUID]
+        r = r.json()
         return r
 
     def get_members_of_a_project(self, project_id, wrs_access_token):
@@ -55,8 +55,16 @@ class Projects(object):
             user_info = elem[config.WRS_USER_INFO]
             projects = self.get_projects_of_an_employee(
                 user_info[config.WRS_USER_ID], wrs_access_token)
+            for project in projects:
+                project["role"] = 'Member'
+                if self.get_manager_of_project(
+                        project[config.WRS_PROJECT_ID],
+                        wrs_access_token)[config.WRS_UUID] == user_info[
+                            config.WRS_USER_UUID]:
+                    project["role"] = 'Manager'
             response["fulfillmentText"] = "<ul><li>{}</li></ul>".format(
-                "</li><li>".join(project[config.WRS_PROJECT_NAME]
+                "</li><li>".join("{} ({})".format(project[
+                    config.WRS_PROJECT_NAME], project["role"])
                                  for project in projects))
         else:
             response["fulfillmentText"] = "Please Login First then try."

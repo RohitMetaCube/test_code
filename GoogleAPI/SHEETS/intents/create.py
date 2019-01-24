@@ -38,8 +38,8 @@ class CreateProject(object):
             if matching_project:
                 if self.project_obj.get_manager_of_project(
                         matching_project[config.WRS_PROJECT_ID],
-                        wrs_access_token,
-                        user_info) == user_info[config.WRS_USER_UUID]:
+                        wrs_access_token)[config.WRS_UUID] == user_info[
+                            config.WRS_USER_UUID]:
                     users = self.project_obj.get_members_of_a_project(
                         matching_project[config.WRS_PROJECT_ID],
                         wrs_access_token)
@@ -76,8 +76,8 @@ class CreateProject(object):
                             project_name)
             else:
                 response["fulfillmentText"] = (
-                    "Your Project Name not found in our DB.</br>"
-                    "If Possible please rephrase it.")
+                    "Your are not Registered for {}</br>"
+                    "If Possible please rephrase it.").format(project_name)
         else:
             response["fulfillmentText"] = "Please Login First then try."
         return response
