@@ -7,7 +7,7 @@ from intents.create import CreateProject
 from intents.remove import RemoveProject
 from intents.add_log import AddWorkLog
 from intents.mark_entry import MarkEntry
-from intents.managers import Mangers
+from intents.managers import Managers
 from config import config
 
 
@@ -27,7 +27,7 @@ class Utils(object):
         self.remove_sheet = RemoveProject(self.mongo, self.user_projects)
         self.add_work_log = AddWorkLog(self.mongo, self.user_projects)
         self.mark_entry = MarkEntry(self.mongo, self.user_projects)
-        self.managers = Mangers(self.mongo)
+        self.managers = Managers(self.mongo)
 
         self.intent_map = {
             'User Login': self.user_login,
