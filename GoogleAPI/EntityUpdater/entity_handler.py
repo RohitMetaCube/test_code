@@ -1,5 +1,16 @@
 import dialogflow_v2 as dialogflow
 import config
+from utils.log_utils import OneLineExceptionFormatter
+import logging
+import sys
+
+logging_handler = logging.StreamHandler(sys.stdout)
+log_format = OneLineExceptionFormatter(config.LOG_FORMAT_STRING,
+                                       config.LOG_TIME_FORMAT)
+logging_handler.setFormatter(log_format)
+root = logging.getLogger()
+root.setLevel(logging.INFO)
+root.addHandler(logging_handler)
 
 
 class EntityHandler(object):
@@ -12,14 +23,14 @@ class EntityHandler(object):
             display_name=display_name, kind=kind)
         response = self.entity_types_client.create_entity_type(parent,
                                                                entity_type)
-        print('Entity type created: \n{}'.format(response))
+        logging.info('Entity type created: \n{}'.format(response))
 
     def delete_entity_type(self, project_id, entity_type_id):
         """Delete entity type with the given entity type name."""
         entity_type_path = self.entity_types_client.entity_type_path(
             project_id, entity_type_id)
         self.entity_types_client.delete_entity_type(entity_type_path)
-        print('Deleted Entity type: \n{}'.format(entity_type_id))
+        logging.info('Deleted Entity type: \n{}'.format(entity_type_id))
 
     def add_new_entity(self,
                        project_id,
@@ -34,7 +45,7 @@ class EntityHandler(object):
         entity.synonyms.extend(synonyms)
         response = self.entity_types_client.batch_create_entities(
             entity_type_path, [entity])
-        print('Entity created: {}'.format(response))
+        logging.info('Entity created: {}'.format(response))
 
     def delete_entity(self, project_id, entity_type_id, entity_value):
         """Delete entity with the given entity type and entity value."""
@@ -42,7 +53,7 @@ class EntityHandler(object):
             project_id, entity_type_id)
         self.entity_types_client.batch_delete_entities(entity_type_path,
                                                        [entity_value])
-        print('Removed Entity: {}'.format(entity_value))
+        logging.info('Removed Entity: {}'.format(entity_value))
 
     def fetch_all_entities(self, project_id, entity_type_id):
         name = self.entity_types_client.entity_type_path(project_id,
@@ -51,7 +62,7 @@ class EntityHandler(object):
         entities = {}
         for entity in response.entities:
             entities[entity.value] = entity.synonyms
-        print('Entity Details: {}'.format(entities))
+        logging.info('Entity Details: {}'.format(entities))
         return entities
 
 

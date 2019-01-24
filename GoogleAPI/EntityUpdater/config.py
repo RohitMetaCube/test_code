@@ -11,4 +11,6 @@ ENTITIES = {
 }
 WRS_PROJECT_NAME = "display_name"  # From Projects List
 WRS_ACCESS_TOKENS = "0be7f280-f5d5-3c7e-a4a2-3b93f6d647a5"
-SCHEDULED_TIME = 60 * 60  # 1 Hour in seconds
+
+LOG_FORMAT_STRING = '%(asctime)s [%(levelname)s] %(message)s'
+LOG_TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
