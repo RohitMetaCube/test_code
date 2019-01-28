@@ -335,25 +335,27 @@ class mongoDB:
                                 task[config.WORKING_HOURS])
         leaves = defaultdict(lambda: defaultdict(int))
         if config.USER_LEAVES in elem:
-            for leave in elem[config.USER_LEAVES]:
-                leave_type = leave[0][config.LEAVE_TYPE]
-                for l in leave:
-                    if l[config.LEAVE_APPROVED_STATUS]:
-                        leave_type = leave[0][config.LEAVE_TYPE]
-                        leaves[l[config.LEAVE_TYPE]]["Approved"] += 1
+            for date in elem[config.USER_LEAVES]:
+                leave_type = None
+                for leave in elem[config.USER_LEAVES][date]:
+                    leave_type = leave[config.LEAVE_TYPE]
+                    if leave[config.LEAVE_APPROVED_STATUS]:
+                        leaves[leave_type]["Approved"] += 1
                         break
-                leaves[leave_type]["Applied"] += 1
+                if leave_type != None:
+                    leaves[leave_type]["Applied"] += 1
 
         wfhs = defaultdict(lambda: defaultdict(int))
         if config.WORK_FROM_HOME in elem:
-            for wfh in elem[config.WORK_FROM_HOME]:
-                wfh_type = wfh[0][config.LEAVE_TYPE]
-                for sub_wfh in wfh:
-                    if sub_wfh[config.LEAVE_APPROVED_STATUS]:
-                        wfh_type = sub_wfh[config.LEAVE_TYPE]
+            for date in elem[config.WORK_FROM_HOME]:
+                wfh_type = None
+                for wfh in elem[config.WORK_FROM_HOME][date]:
+                    wfh_type = wfh[config.LEAVE_TYPE]
+                    if wfh[config.LEAVE_APPROVED_STATUS]:
                         wfhs[wfh_type]["Approved"] += 1
                         break
-                wfhs[wfh_type]["Applied"] += 1
+                if wfh_type != None:
+                    wfhs[wfh_type]["Applied"] += 1
 
         return {
             "wfh":
