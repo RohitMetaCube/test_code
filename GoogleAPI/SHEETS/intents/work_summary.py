@@ -12,7 +12,7 @@ class WorkSummary(object):
         self.project_obj = project_obj
         self.headers = config.REQUEST_HEADERS
 
-    def draw_pie_chart(self, data):
+    def draw_pie_chart(self, data, wrs_token):
         data = [["{}".format(d[0]), d[1]] for d in data]
         soup = BeautifulSoup(open("templates/pie_chart.html"))
         try:
@@ -20,9 +20,11 @@ class WorkSummary(object):
             m["value"] = data
         except Exception as e:
             soup = "Error in pie chart data adding: {}".format(e)
-        #requests.post("http://0.0.0.0:443/setPieChart", json={"data":str(soup)})
-        return str(soup)
-        
+        requests.post(
+            "http://0.0.0.0:443/setPieChart",
+            json={"data": str(soup),
+                  "token": wrs_token})
+
     def apply(self, *argv, **kwargs):
         session_id = None if WorkSummary.DIALOGFLOW_SESSION_PARAMETER not in kwargs[
             'params'] else kwargs['params'][
@@ -87,8 +89,10 @@ class WorkSummary(object):
                             ["Approved {} WFH".format(lt), ld['Approved']])
                         data.append(
                             ["Applied {} WFH".format(lt), ld['Applied']])
-                    response["fulfillmentText"] = self.draw_pie_chart(data)
-                    #response["fulfillmentText"] += "<br><a href='/showPieChart'>Pie Chart</a>"
+                    self.draw_pie_chart(data, wrs_access_token)
+                    response[
+                        "fulfillmentText"] += "<br><a target='_blank' rel='noopener noreferrer' href='/showPieChart?token={}'>Pie Chart</a>".format(
+                            wrs_access_token)
 
                 elif "error_message" in response:
                     response["fulfillmentText"] = response["error_message"]
