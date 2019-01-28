@@ -10,7 +10,7 @@ import logging
 import googleapiclient
 import json
 import time
-from intents.log_utils import OneLineExceptionFormatter
+from utils.log_utils import OneLineExceptionFormatter
 
 try:
     import argparse
