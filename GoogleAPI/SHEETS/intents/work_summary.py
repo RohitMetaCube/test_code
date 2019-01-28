@@ -86,9 +86,9 @@ class WorkSummary(object):
                             ["Applied {} Leaves".format(lt), ld['Applied']])
                     for lt, ld in response["summaryData"]["wfh"].items():
                         data.append(
-                            ["Approved {} WFH".format(lt), ld['Approved']])
+                            ["Approved WFH".format(lt), ld['Approved']])
                         data.append(
-                            ["Applied {} WFH".format(lt), ld['Applied']])
+                            ["Applied WFH".format(lt), ld['Applied']])
                     self.draw_pie_chart(data, wrs_access_token)
                     response[
                         "fulfillmentText"] += "<br><a target='_blank' rel='noopener noreferrer' href='/showPieChart?token={}'>Pie Chart</a>".format(
