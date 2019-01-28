@@ -1029,11 +1029,11 @@ class TimeSheetAPI:
             TimeSheetAPI.WORK_DATE_PARAMETER)
         total_time = time.time()
         month = self.type_converter(
-            params[TimeSheetAPI.MONTH_PARAMETER][0],
+            params[TimeSheetAPI.MONTH_PARAMETER],
             int) if TimeSheetAPI.MONTH_PARAMETER in params else time.localtime(
             )[1]
         year = self.type_converter(
-            params[TimeSheetAPI.YEAR_PARAMETER][0],
+            params[TimeSheetAPI.YEAR_PARAMETER],
             int) if TimeSheetAPI.YEAR_PARAMETER in params else time.localtime(
             )[0]
         user_info = params[
