@@ -16,7 +16,7 @@ class WorkSummary(object):
         soup = BeautifulSoup(open("templates/pie_chart.html"))
         try:
             m = soup.find('', {'id': "data"})
-            m["value"] = data
+            m["value"] = [["{}".format(d[0]), d[1]] for d in data]
         except Exception as e:
             soup = "Error in pie chart data adding: {}".format(e)
         return str(soup)
