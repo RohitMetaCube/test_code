@@ -1,6 +1,7 @@
 import requests
 from config import config
 from time_sheet_api import TimeSheetAPI
+from BeautifulSoup import BeautifulSoup
 
 
 class WorkSummary(object):
@@ -10,6 +11,15 @@ class WorkSummary(object):
         self.mongo = mongo
         self.project_obj = project_obj
         self.headers = config.REQUEST_HEADERS
+
+    def draw_pie_chart(self, data):
+        soup = BeautifulSoup(open("templates/pie_chart.html"))
+        try:
+            m = soup.find('', {'id': "data"})
+            m["value"] = data
+        except Exception as e:
+            soup = "Error in pie chart data adding: {}".format(e)
+        return str(soup)
 
     def apply(self, *argv, **kwargs):
         session_id = None if WorkSummary.DIALOGFLOW_SESSION_PARAMETER not in kwargs[
@@ -49,7 +59,7 @@ class WorkSummary(object):
                                                                      work_hrs)
                             for task_name, work_hrs in response["summaryData"][
                                 "work"].items()) + "</table>",
-                        "<table border='1'><caption>Leave Details</caption><tr><th>Leave Type</th><th>Applied Count</th><td>Approved Count</th></tr>"
+                        "<table border='1'><caption>Leave Details</caption><tr><th>Leave Type</th><th>Applied Count</th><th>Approved Count</th></tr>"
                         + "".join(
                             "<tr><td>{}</td><td>{}</td><td>{}</td></tr>".
                             format(leave_type, leave_details['Applied'],
@@ -63,6 +73,19 @@ class WorkSummary(object):
                                    wfh_details['Approved'])
                             for wfh_type, wfh_details in response[
                                 "summaryData"]["wfh"].items()) + "</table>")
+                    data = response["summaryData"]["work"].items()
+                    for lt, ld in response["summaryData"]["leave"].items():
+                        data.append(
+                            ["Approved {} Leaves".format(lt), ld['Approved']])
+                        data.append(
+                            ["Applied {} Leaves".format(lt), ld['Applied']])
+                    for lt, ld in response["summaryData"]["wfh"].items():
+                        data.append(
+                            ["Approved {} WFH".format(lt), ld['Approved']])
+                        data.append(
+                            ["Applied {} WFH".format(lt), ld['Applied']])
+                    response["fulfillmentText"] = self.draw_pie_chart(data)
+
                 elif "error_message" in response:
                     response["fulfillmentText"] = response["error_message"]
                 else:
