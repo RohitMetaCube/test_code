@@ -13,14 +13,16 @@ class WorkSummary(object):
         self.headers = config.REQUEST_HEADERS
 
     def draw_pie_chart(self, data):
+        data = [["{}".format(d[0]), d[1]] for d in data]
         soup = BeautifulSoup(open("templates/pie_chart.html"))
         try:
             m = soup.find('', {'id': "data"})
-            m["value"] = [["{}".format(d[0]), d[1]] for d in data]
+            m["value"] = data
         except Exception as e:
             soup = "Error in pie chart data adding: {}".format(e)
+        #requests.post("http://0.0.0.0:443/setPieChart", json={"data":str(soup)})
         return str(soup)
-
+        
     def apply(self, *argv, **kwargs):
         session_id = None if WorkSummary.DIALOGFLOW_SESSION_PARAMETER not in kwargs[
             'params'] else kwargs['params'][
@@ -86,6 +88,7 @@ class WorkSummary(object):
                         data.append(
                             ["Applied {} WFH".format(lt), ld['Applied']])
                     response["fulfillmentText"] = self.draw_pie_chart(data)
+                    #response["fulfillmentText"] += "<br><a href='/showPieChart'>Pie Chart</a>"
 
                 elif "error_message" in response:
                     response["fulfillmentText"] = response["error_message"]

@@ -2,7 +2,7 @@ import cherrypy
 
 class botUI(object):
     def __init__(self):
-        ''
+        self.data = ''
 
     @cherrypy.expose
     def home(self):
@@ -15,3 +15,22 @@ class botUI(object):
     @cherrypy.expose
     def agentDomJs(self):
         return open("UI/jscripts/agentDemo.bundle.min.js")
+    
+    @cherrypy.expose
+    def loaderJs(self):
+        return open("UI/jscripts/loader.js")
+
+    @cherrypy.expose
+    @cherrypy.tools.json_in()
+    def setPieChart(self):
+        cherrypy.response.headers['Content-Type'] = "application/json"
+        cherrypy.response.headers['Connection'] = "close"
+
+        if cherrypy.request.method == "POST":
+            params = cherrypy.request.json
+            self.data = params["data"]
+        return self.data
+    
+    @cherrypy.expose
+    def showPieChart(self):
+        return self.data
