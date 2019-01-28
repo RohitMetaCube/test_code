@@ -43,20 +43,20 @@ class WorkSummary(object):
                         "<div>{}</div></br>"
                         "<div>{}</div></br>"
                     ).format(
-                        "<table border='1'><caption>Work Details</caption><th><td>Task Name</td><td>Working Hours</td></th>"
+                        "<table border='1'><caption>Work Details</caption><tr><th>Task Name</th><th>Working Hours</th></tr>"
                         + "".join(
                             "<tr><td>{}</td><td>{}</td></tr>".format(task_name,
                                                                      work_hrs)
                             for task_name, work_hrs in response["summaryData"][
                                 "work"].items()) + "</table>",
-                        "<table border='1'><caption>Leave Details</caption><th><td>Leave Type</td><td>Status</td><td>Count</td></th>"
+                        "<table border='1'><caption>Leave Details</caption><tr><th>Leave Type</th><th>Applied Count</th><td>Approved Count</th></tr>"
                         + "".join(
                             "<tr><td>{}</td><td>{}</td><td>{}</td></tr>".
                             format(leave_type, leave_details['Applied'],
                                    leave_details['Approved'])
                             for leave_type, leave_details in response[
                                 "summaryData"]["leave"].items()) + "</table>",
-                        "<table border='1'><caption>Wfh Details</caption><th><td>WFH Type</td><td>Status</td><td>Count</td></th>"
+                        "<table border='1'><caption>Wfh Details</caption><tr><th>WFH Type</th><th>Applied Count</th><th>Approved Count</th></tr>"
                         + "".join(
                             "<tr><td>{}</td><td>{}</td><td>{}</td></tr>".
                             format(wfh_type, wfh_details['Applied'],
