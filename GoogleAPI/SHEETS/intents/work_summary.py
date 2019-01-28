@@ -43,10 +43,26 @@ class WorkSummary(object):
                         "<div>{}</div></br>"
                         "<div>{}</div></br>"
                     ).format(
-                        "<table border='1'><caption>Work Details</caption><th><td>Task Name</td><td>Working Hours</td></th>"+"".join("<tr><td>{}</td><td>{}</td></tr>".format(task_name, work_hrs) for task_name, work_hrs in response["summaryData"]["work"].items())+"</table>",
-                        "<table border='1'><caption>Leave Details</caption><th><td>Leave Type</td><td>Status</td><td>Count</td></th>"+"".join("<tr><td>{}</td><td>{}</td><td>{}</td></tr>".format(leave_type, leave_details['Applied'], leave_details['Approved']) for leave_type, leave_details in response["summaryData"]["leave"].items())+"</table>",
-                        "<table border='1'><caption>Wfh Details</caption><th><td>WFH Type</td><td>Status</td><td>Count</td></th>"+"".join("<tr><td>{}</td><td>{}</td><td>{}</td></tr>".format(wfh_type, wfh_details['Applied'], wfh_details['Approved']) for wfh_type, wfh_details in response["summaryData"]["wfh"].items())+"</table>"   
-                    )
+                        "<table border='1'><caption>Work Details</caption><th><td>Task Name</td><td>Working Hours</td></th>"
+                        + "".join(
+                            "<tr><td>{}</td><td>{}</td></tr>".format(task_name,
+                                                                     work_hrs)
+                            for task_name, work_hrs in response["summaryData"][
+                                "work"].items()) + "</table>",
+                        "<table border='1'><caption>Leave Details</caption><th><td>Leave Type</td><td>Status</td><td>Count</td></th>"
+                        + "".join(
+                            "<tr><td>{}</td><td>{}</td><td>{}</td></tr>".
+                            format(leave_type, leave_details['Applied'],
+                                   leave_details['Approved'])
+                            for leave_type, leave_details in response[
+                                "summaryData"]["leave"].items()) + "</table>",
+                        "<table border='1'><caption>Wfh Details</caption><th><td>WFH Type</td><td>Status</td><td>Count</td></th>"
+                        + "".join(
+                            "<tr><td>{}</td><td>{}</td><td>{}</td></tr>".
+                            format(wfh_type, wfh_details['Applied'],
+                                   wfh_details['Approved'])
+                            for wfh_type, wfh_details in response[
+                                "summaryData"]["wfh"].items()) + "</table>")
                 elif "error_message" in response:
                     response["fulfillmentText"] = response["error_message"]
                 else:

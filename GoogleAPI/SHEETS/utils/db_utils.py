@@ -344,7 +344,7 @@ class mongoDB:
                         break
                 if leave_type != None:
                     leaves[leave_type]["Applied"] += 1
-
+                    leaves[leave_type]["Approved"] += 0  # Just to add field
         wfhs = defaultdict(lambda: defaultdict(int))
         if config.WORK_FROM_HOME in elem:
             for date in elem[config.WORK_FROM_HOME]:
@@ -356,6 +356,7 @@ class mongoDB:
                         break
                 if wfh_type != None:
                     wfhs[wfh_type]["Applied"] += 1
+                    leaves[leave_type]["Approved"] += 0  # Just to add field
 
         return {
             "wfh":
