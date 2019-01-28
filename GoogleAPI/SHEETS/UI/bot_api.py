@@ -25,9 +25,10 @@ class botUI(object):
 
         if cherrypy.request.method == "POST":
             params = cherrypy.request.json
-            self.data[params['project']] = params["data"]
+            self.data[str(params['project'])] = params["data"]
 
     @cherrypy.expose
     def showPieChart(self, project):
+        project = str(project)
         return self.data[
             project] if project in self.data else "No pie chart found"
