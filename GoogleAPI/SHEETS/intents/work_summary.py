@@ -73,7 +73,8 @@ class WorkSummary(object):
                                    wfh_details['Approved'])
                             for wfh_type, wfh_details in response[
                                 "summaryData"]["wfh"].items()) + "</table>")
-                    data = response["summaryData"]["work"].items()
+                    data = [[d[0], d[1]]
+                            for d in response["summaryData"]["work"].items()]
                     for lt, ld in response["summaryData"]["leave"].items():
                         data.append(
                             ["Approved {} Leaves".format(lt), ld['Approved']])
