@@ -1013,6 +1013,69 @@ class TimeSheetAPI:
             response_object = {"error_message": error_message}
         return response_object
 
+    @cherrypy.expose
+    @cherrypy.tools.json_out()
+    @cherrypy.tools.json_in()
+    def work_summary(self, **other_params):
+        cherrypy.response.headers['Content-Type'] = "application/json"
+        cherrypy.response.headers['Connection'] = "close"
+
+        params = {}
+        if cherrypy.request.method == "POST":
+            params = cherrypy.request.json
+        error_message = "Missing Required Parameters ({} and {} and {})".format(
+            TimeSheetAPI.PROJECT_NAME_PARAMETER,
+            TimeSheetAPI.MARKING_TYPE_PARAMETER,
+            TimeSheetAPI.WORK_DATE_PARAMETER)
+        total_time = time.time()
+        month = self.type_converter(
+            params[TimeSheetAPI.MONTH_PARAMETER][0],
+            int) if TimeSheetAPI.MONTH_PARAMETER in params else time.localtime(
+            )[1]
+        year = self.type_converter(
+            params[TimeSheetAPI.YEAR_PARAMETER][0],
+            int) if TimeSheetAPI.YEAR_PARAMETER in params else time.localtime(
+            )[0]
+        user_info = params[
+            TimeSheetAPI.
+            USER_INFO_PARAMETER] if TimeSheetAPI.USER_INFO_PARAMETER in params else {}
+        project = params[
+            TimeSheetAPI.
+            PROJECT_PARAMETER] if TimeSheetAPI.PROJECT_PARAMETER in params else {}
+
+        if not project or config.WRS_PROJECT_NAME not in project:
+            project[config.WRS_PROJECT_NAME] = "NOT_FOUND"
+
+        spreadsheet_details = self.mongodb.fetch_spreadsheet_id_and_index(
+            month,
+            year,
+            email=user_info[config.WRS_EMAIL],
+            project_name=project[config.WRS_PROJECT_NAME])
+        logging.info(
+            "projectName: {}, userDetails: {}, spreadsheetDetails: {}".format(
+                project[config.WRS_PROJECT_NAME], {
+                    'email': user_info[config.WRS_EMAIL],
+                    "month": month,
+                    "year": year
+                }, spreadsheet_details))
+        spreadsheet_id = spreadsheet_details[config.SPREADSHEET_ID]
+        sheetIndex = spreadsheet_details[config.USER_SHEET_INDEX]
+
+        if not spreadsheet_id:
+            error_message = "Unable to find Timesheet for project {}, month {} and year {}. Please Ask your Manager to create Timesheet".format(
+                project[config.WRS_PROJECT_NAME], month, year)
+
+        if spreadsheet_id and sheetIndex != None:
+            summary_data = self.mongodb.get_work_summary(
+                spreadsheet_id, email=user_info[config.WRS_EMAIL])
+            response_object = {
+                "processingTime": time.time() - total_time,
+                "summaryData": summary_data
+            }
+        else:
+            response_object = {"error_message": error_message}
+        return response_object
+
 
 class health_check:
     def __init__(self):

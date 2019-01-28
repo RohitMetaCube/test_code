@@ -8,6 +8,7 @@ from intents.remove import RemoveProject
 from intents.add_log import AddWorkLog
 from intents.mark_entry import MarkEntry
 from intents.managers import Managers
+from intents.work_summary import WorkSummary
 from config import config
 
 
@@ -28,6 +29,7 @@ class Utils(object):
         self.add_work_log = AddWorkLog(self.mongo, self.user_projects)
         self.mark_entry = MarkEntry(self.mongo, self.user_projects)
         self.managers = Managers(self.mongo)
+        self.work_summary = WorkSummary(self.mongo, self.user_projects)
 
         self.intent_map = {
             'User Login': self.user_login,
@@ -38,5 +40,6 @@ class Utils(object):
             'Mark Entry': self.mark_entry,
             'User Logout': self.user_logout,
             'Project Names': self.user_projects,
-            'Managers': self.managers
+            'Managers': self.managers,
+            'Work Summary': self.work_summary
         }

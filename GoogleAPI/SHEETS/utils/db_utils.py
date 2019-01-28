@@ -1,5 +1,6 @@
 from pymongo import MongoClient, ASCENDING
 from config import config
+from collections import defaultdict, OrderedDict
 
 
 class mongoDB:
@@ -308,3 +309,38 @@ class mongoDB:
                     config.SPREADSHEET_ID: spreadsheet_id
                 })
         return spreadsheet_id
+
+    def get_work_summary(self, spreadsheet_id, email):
+        config.TASK_DETAILS
+        elem = self.fetch_data(
+            config.LOGS_COLLECTION,
+            'cursor',
+            query={
+                config.SPREADSHEET_ID: spreadsheet_id,
+                config.WRS_EMAIL: email
+            },
+            projection_list={config.WORK_DETAILS: 1, config.USER_LEAVES: 1, config.WORK_FROM_HOME:1})[0]
+        type_hours = defaultdict(float)
+        if config.WORK_DETAILS in elem:
+            for date in elem[config.WORK_DETAILS]:
+                if config.TASK_DETAILS in elem[config.WORK_DETAILS][date] and elem[config.WORK_DETAILS][date][config.WORKING_HOURS]:
+                    type_hours[config.TASK_TYPE_FIELD] += float(elem[config.WORK_DETAILS][date][config.WORKING_HOURS])
+        leaves = defaultdict(lambda: defaultdict(int))
+        if config.USER_LEAVES in elem:
+            for leave in elem[config.USER_LEAVES]:
+                if leave[config.LEAVE_APPROVED_STATUS]:
+                    leaves[leave[config.LEAVE_TYPE]]["Approved"] += 1
+                leaves[leave[config.LEAVE_TYPE]]["Applied"] += 1
+        
+        wfhs = defaultdict(lambda: defaultdict(int))
+        if config.WORK_FROM_HOME in elem:
+            for wfh in elem[config.WORK_FROM_HOME]:
+                if wfh[config.LEAVE_APPROVED_STATUS]:
+                    wfhs[wfh[config.LEAVE_TYPE]]["Approved"] += 1
+                wfhs[wfh[config.LEAVE_TYPE]]["Applied"] += 1
+        
+        return {"wfh":OrderedDict(sorted(wfhs.items(), key=lambda k:(k[0],k[1][0]))), "leave":OrderedDict(sorted(leaves.items(), key=lambda k:(k[0],k[1][0]))), "work":OrderedDict(sorted(type_hours.items()))}        
+        
+    
+    
+    
