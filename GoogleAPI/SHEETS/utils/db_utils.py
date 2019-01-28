@@ -356,7 +356,7 @@ class mongoDB:
                         break
                 if wfh_type != None:
                     wfhs[wfh_type]["Applied"] += 1
-                    leaves[leave_type]["Approved"] += 0  # Just to add field
+                    wfhs[wfh_type]["Approved"] += 0  # Just to add field
 
         return {
             "wfh":
