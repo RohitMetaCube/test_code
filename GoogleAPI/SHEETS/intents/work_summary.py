@@ -12,7 +12,7 @@ class WorkSummary(object):
         self.project_obj = project_obj
         self.headers = config.REQUEST_HEADERS
 
-    def draw_pie_chart(self, data, wrs_token):
+    def draw_pie_chart(self, data, project):
         data = [["{}".format(d[0]), d[1]] for d in data]
         soup = BeautifulSoup(open("templates/pie_chart.html"))
         try:
@@ -23,7 +23,7 @@ class WorkSummary(object):
         requests.post(
             "http://0.0.0.0:443/setPieChart",
             json={"data": str(soup),
-                  "token": wrs_token})
+                  "project": project})
 
     def apply(self, *argv, **kwargs):
         session_id = None if WorkSummary.DIALOGFLOW_SESSION_PARAMETER not in kwargs[
@@ -87,12 +87,12 @@ class WorkSummary(object):
                     for lt, ld in response["summaryData"]["wfh"].items():
                         data.append(
                             ["Approved WFH".format(lt), ld['Approved']])
-                        data.append(
-                            ["Applied WFH".format(lt), ld['Applied']])
-                    self.draw_pie_chart(data, wrs_access_token)
+                        data.append(["Applied WFH".format(lt), ld['Applied']])
+                    self.draw_pie_chart(
+                        data, matching_project[config.WRS_PROJECT_ID])
                     response[
-                        "fulfillmentText"] += "<br><a target='_blank' rel='noopener noreferrer' href='/showPieChart?token={}'>Pie Chart</a>".format(
-                            wrs_access_token)
+                        "fulfillmentText"] += "<br><a target='_blank' rel='noopener noreferrer' href='/showPieChart?project={}'>Pie Chart</a>".format(
+                            matching_project[config.WRS_PROJECT_ID])
 
                 elif "error_message" in response:
                     response["fulfillmentText"] = response["error_message"]
