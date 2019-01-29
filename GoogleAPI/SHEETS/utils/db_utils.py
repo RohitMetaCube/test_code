@@ -408,8 +408,8 @@ class mongoDB:
                         approved = True
                         break
                 day_wise_data[int(date)]["wfh"] = approved
-        leaves = {}
-        wfhs = {}
+        leaves = defaultdict(int)
+        wfhs = defaultdict(int)
         working = defaultdict(int)
         for v in day_wise_data.values():
             if 'work' in v:
