@@ -1068,9 +1068,23 @@ class TimeSheetAPI:
         if spreadsheet_id and sheetIndex != None:
             summary_data = self.mongodb.get_work_summary(
                 spreadsheet_id, email=user_info[config.WRS_EMAIL])
+            detailed_data = self.mongodb.get_detailed_data(
+                spreadsheet_id, email=user_info[config.WRS_EMAIL])
+            number_of_days = self.compute_number_of_days(month, year)
+            first_day = self.compute_day(1, month, year)
+            number_of_days_in_week_1 = (7 - first_day)
             response_object = {
                 "processingTime": time.time() - total_time,
-                "summaryData": summary_data
+                "summaryData": summary_data,
+                "detailedData": detailed_data,
+                "weekStats": {
+                    "totalDays": number_of_days,
+                    "firstDay": first_day,
+                    "numberOfDaysInFirstWeek":
+                    number_of_days_in_week_1,  #if day < 5 else 7
+                    "numberOfDaysInLastWeek":
+                    number_of_days - 21 - number_of_days_in_week_1
+                }
             }
         else:
             response_object = {"error_message": error_message}

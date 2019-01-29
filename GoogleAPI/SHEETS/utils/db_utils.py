@@ -311,7 +311,6 @@ class mongoDB:
         return spreadsheet_id
 
     def get_work_summary(self, spreadsheet_id, email):
-        config.TASK_DETAILS
         elem = self.fetch_data(
             config.LOGS_COLLECTION,
             'cursor',
@@ -366,4 +365,70 @@ class mongoDB:
             OrderedDict(sorted(
                 leaves.items(), key=lambda k: (k[0], k[1][0]))),
             "work": OrderedDict(sorted(type_hours.items()))
+        }
+
+    def get_detailed_data(self, spreadsheet_id, email):
+        elem = self.fetch_data(
+            config.LOGS_COLLECTION,
+            'cursor',
+            query={
+                config.SPREADSHEET_ID: spreadsheet_id,
+                config.WRS_EMAIL: email
+            },
+            projection_list={
+                config.WORK_DETAILS: 1,
+                config.USER_LEAVES: 1,
+                config.WORK_FROM_HOME: 1
+            })[0]
+        day_wise_data = defaultdict(dict)
+        if config.WORK_DETAILS in elem:
+            for date in elem[config.WORK_DETAILS]:
+                task_hrs_map = defaultdict(float)
+                if config.TASK_DETAILS in elem[config.WORK_DETAILS][date]:
+                    for task in elem[config.WORK_DETAILS][date][
+                            config.TASK_DETAILS]:
+                        if task[config.WORKING_HOURS]:
+                            task_hrs_map[task[
+                                config.TASK_TYPE_FIELD]] += float(task[
+                                    config.WORKING_HOURS])
+                day_wise_data[int(date)]["work"] = task_hrs_map
+        if config.USER_LEAVES in elem:
+            for date in elem[config.USER_LEAVES]:
+                approved = False
+                for leave in elem[config.USER_LEAVES][date]:
+                    if leave[config.LEAVE_APPROVED_STATUS]:
+                        approved = True
+                        break
+                day_wise_data[int(date)]["leave"] = approved
+        if config.WORK_FROM_HOME in elem:
+            for date in elem[config.WORK_FROM_HOME]:
+                approved = False
+                for wfh in elem[config.WORK_FROM_HOME][date]:
+                    if wfh[config.LEAVE_APPROVED_STATUS]:
+                        approved = True
+                        break
+                day_wise_data[int(date)]["wfh"] = approved
+        wfhs = {}
+        wfhs['Applied'] = sum(
+            [1 if 'wfh' in v else 0 for v in day_wise_data.values()])
+        wfhs['Approved'] = sum([
+            1 if 'wfh' in v and v['wfh'] else 0 for v in day_wise_data.values()
+        ])
+        leaves = {}
+        leaves['Applied'] = sum(
+            [1 if 'leave' in v else 0 for v in day_wise_data.values()])
+        leaves['Approved'] = sum([
+            1 if 'leave' in v and v['leave'] else 0
+            for v in day_wise_data.values()
+        ])
+        working = defaultdict(int)
+        for v in day_wise_data.values():
+            if 'work' in v:
+                for vk in v['work'].keys():
+                    working[vk] += 1
+        return {
+            "wfh": wfhs,
+            "leave": leaves,
+            "work": leaves,
+            "detailed": OrderedDict(sorted(day_wise_data.items()))
         }

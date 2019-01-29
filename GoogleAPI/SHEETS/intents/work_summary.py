@@ -1,8 +1,8 @@
 import requests
 from config import config
 from time_sheet_api import TimeSheetAPI
-from BeautifulSoup import BeautifulSoup
 import time
+from collections import defaultdict
 
 
 class WorkSummary(object):
@@ -20,18 +20,88 @@ class WorkSummary(object):
             value = None
         return value
 
-    def draw_pie_chart(self, chart_data, project, month, year):
+    def hours_data(self, summary_data):
+        chart_data = [[tn, wh] for tn, wh in summary_data["work"].items()]
+        for lt, ld in summary_data["leave"].items():
+            chart_data.append([
+                "Approved {} Leaves".format(lt),
+                ld['Approved'] * config.DEFAULT_WORKING_HOURS_OF_A_DAY
+            ])
+            chart_data.append([
+                "Applied {} Leaves".format(lt),
+                ld['Applied'] * config.DEFAULT_WORKING_HOURS_OF_A_DAY
+            ])
+        for lt, ld in summary_data["wfh"].items():
+            chart_data.append([
+                "Approved {}".format(lt),
+                ld['Approved'] * config.DEFAULT_WORKING_HOURS_OF_A_DAY
+            ])
+            chart_data.append([
+                "Applied {}".format(lt),
+                ld['Applied'] * config.DEFAULT_WORKING_HOURS_OF_A_DAY
+            ])
         chart_data = [["{}".format(d[0]), d[1]] for d in chart_data]
-        soup = BeautifulSoup(open("templates/pie_chart.html"))
-        try:
-            m = soup.find('', {'id': "data"})
-            m["value"] = chart_data
-        except Exception as e:
-            soup = "Error in pie chart data adding: {}".format(e)
+        return chart_data
+
+    def sprint_data(self, summary_data):
+        chart_data = [[tn, wh] for tn, wh in summary_data["work"].items()]
+        applied = 0
+        approved = 0
+        for ld in summary_data["leave"].values():
+            applied += ld['Applied']
+            approved += ld['Approved']
+        chart_data.append([
+            "Approved Leaves", approved * config.DEFAULT_WORKING_HOURS_OF_A_DAY
+        ])
+        chart_data.append([
+            "Applied Leaves", applied * config.DEFAULT_WORKING_HOURS_OF_A_DAY
+        ])
+        applied = 0
+        approved = 0
+        for ld in summary_data["wfh"].values():
+            applied += ld['Applied']
+            approved += ld['Approved']
+        chart_data.append(
+            ["Approved WFH", approved * config.DEFAULT_WORKING_HOURS_OF_A_DAY])
+        chart_data.append(
+            ["Applied WFH", applied * config.DEFAULT_WORKING_HOURS_OF_A_DAY])
+        chart_data = [["{}".format(d[0]), d[1]] for d in chart_data]
+        return chart_data
+
+    def day_data(self, detailed_data):
+        chart_data = [[tn, wd] for tn, wd in detailed_data["work"].items()]
+        chart_data.append(
+            ["Approved Leaves", detailed_data["leave"]['Approved']])
+        chart_data.append(
+            ["Applied Leaves", detailed_data["leave"]['Applied']])
+        chart_data.append(["Approved WFH", detailed_data["wfh"]['Approved']])
+        chart_data.append(["Applied WFH", detailed_data["wfh"]['Applied']])
+        chart_data = [["{}".format(d[0]), d[1]] for d in chart_data]
+        return chart_data
+
+    def week_data(self, detailed_data, week_stats):
+        chart_data = defaultdict(float)
+        for date, data in detailed_data['detailed'].items():
+            if 0 < date < week_stats["totalDays"]:
+                if date <= week_stats["numberOfDaysInFirstWeek"]:
+                    chart_data['week 1'] += sum(data["work"].values())
+                else:
+                    date -= week_stats["numberOfDaysInFirstWeek"]
+                    chart_data['week {}'.format((date % 7) + 2)] += sum(data[
+                        "work"].values())
+
+        chart_data = [["{}".format(k), v] for k, v in chart_data.items()]
+        return chart_data
+
+    def draw_pie_chart(self, summary_data, detailed_data, week_stats, project,
+                       month, year):
         requests.post(
-            "http://0.0.0.0:443/setPieChart",
+            "http://0.0.0.0:443/setChartData",
             json={
-                "data": str(soup),
+                "hours_data": self.hours_data(summary_data),
+                "day_data": self.day_data(detailed_data),
+                "week_data": self.week_data(detailed_data, week_stats),
+                "sprint_data": self.sprint_data(summary_data),
                 "project": project,
                 "month": month,
                 "year": year
@@ -89,28 +159,6 @@ class WorkSummary(object):
                                    wfh_details['Approved'])
                             for wfh_type, wfh_details in response[
                                 "summaryData"]["wfh"].items()) + "</table>")
-                    chart_data = [
-                        [d[0], d[1]]
-                        for d in response["summaryData"]["work"].items()
-                    ]
-                    for lt, ld in response["summaryData"]["leave"].items():
-                        chart_data.append([
-                            "Approved {} Leaves".format(lt), ld['Approved'] *
-                            config.DEFAULT_WORKING_HOURS_OF_A_DAY
-                        ])
-                        chart_data.append([
-                            "Applied {} Leaves".format(lt), ld['Applied'] *
-                            config.DEFAULT_WORKING_HOURS_OF_A_DAY
-                        ])
-                    for lt, ld in response["summaryData"]["wfh"].items():
-                        chart_data.append([
-                            "Approved WFH".format(lt), ld['Approved'] *
-                            config.DEFAULT_WORKING_HOURS_OF_A_DAY
-                        ])
-                        chart_data.append([
-                            "Applied WFH".format(lt), ld['Applied'] *
-                            config.DEFAULT_WORKING_HOURS_OF_A_DAY
-                        ])
                     month = self.type_converter(
                         data[TimeSheetAPI.MONTH_PARAMETER], int
                     ) if TimeSheetAPI.MONTH_PARAMETER in data else time.localtime(
@@ -120,11 +168,12 @@ class WorkSummary(object):
                     ) if TimeSheetAPI.YEAR_PARAMETER in data else time.localtime(
                     )[0]
                     self.draw_pie_chart(
-                        chart_data, matching_project[config.WRS_PROJECT_ID],
-                        month, year)
+                        response["summaryData"], response["detailedData"],
+                        response["weekStats"],
+                        matching_project[config.WRS_PROJECT_ID], month, year)
                     response["fulfillmentText"] += (
                         "<br><a target='_blank' rel='noopener noreferrer'"
-                        "href='/showPieChart?project={}&month={}&year={}'>Pie Chart</a>"
+                        "href='/showUserStats?project={}&month={}&year={}'>Pie Chart</a>"
                     ).format(matching_project[config.WRS_PROJECT_ID], month,
                              year)
                 elif "error_message" in response:
