@@ -33,5 +33,5 @@ class botUI(object):
         project = str(project)
         month = str(month)
         year = str(year)
-        return self.data[(project, month, year
-                          )] if project in self.data else "No pie chart found"
+        key = (project, month, year)
+        return self.data[key] if key in self.data else "No pie chart found"
