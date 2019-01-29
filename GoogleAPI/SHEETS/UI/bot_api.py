@@ -43,7 +43,6 @@ class botUI(object):
         if key in self.data and self.data[key]:
             soup = BeautifulSoup(open("templates/pie_chart.html"))
             for k, v in self.data[key].items():
-                print k, v
                 try:
                     m = soup.find('', {'id': k})
                     m["value"] = v
@@ -52,4 +51,4 @@ class botUI(object):
                     break
         else:
             soup = "Data Not Found!!!"
-        return soup
+        return str(soup)
