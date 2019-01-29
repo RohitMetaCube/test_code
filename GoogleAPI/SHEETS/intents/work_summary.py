@@ -104,7 +104,7 @@ class WorkSummary(object):
                     )) if "work" in data and data["work"] else 0
                 else:
                     date -= week_stats["numberOfDaysInFirstWeek"]
-                    chart_data['week {}'.format((date % 7) + 2)] += sum(data[
+                    chart_data['week {}'.format(date / 7 + 2)] += sum(data[
                         "work"].values()) if "work" in data and data[
                             "work"] else 0
         chart_data = [["{}".format(k), v]
