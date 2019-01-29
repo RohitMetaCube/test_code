@@ -45,7 +45,7 @@ class botUI(object):
             for k, v in self.data[key].items():
                 try:
                     m = soup.find('', {'id': k})
-                    m["value"] = v
+                    m["value"] = [[str(vv[0]), vv[1]] for vv in v]
                 except Exception as e:
                     soup = "Error in '{}' chart data adding: {}".format(k, e)
                     break

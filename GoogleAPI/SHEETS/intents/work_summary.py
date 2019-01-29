@@ -107,7 +107,8 @@ class WorkSummary(object):
                     chart_data['week {}'.format((date % 7) + 2)] += sum(data[
                         "work"].values()) if "work" in data and data[
                             "work"] else 0
-        chart_data = [["{}".format(k), v] for k, v in chart_data.items()]
+        chart_data = [["{}".format(k), v]
+                      for k, v in sorted(chart_data.items())]
         return chart_data
 
     def draw_pie_chart(self, summary_data, detailed_data, week_stats, project,
