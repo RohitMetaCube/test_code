@@ -69,28 +69,44 @@ class WorkSummary(object):
         return chart_data
 
     def day_data(self, detailed_data):
-        chart_data = [[tn, wd] for tn, wd in detailed_data["work"].items()]
-        chart_data.append(
-            ["Approved Leaves", detailed_data["leave"]['Approved']])
-        chart_data.append(
-            ["Applied Leaves", detailed_data["leave"]['Applied']])
-        chart_data.append(["Approved WFH", detailed_data["wfh"]['Approved']])
-        chart_data.append(["Applied WFH", detailed_data["wfh"]['Applied']])
+        task_type_count = defaultdict(int)
+        for date in detailed_data["detailed"]:
+            if "work" in detailed_data["detailed"][date]:
+                for tt in detailed_data["detailed"][date]["work"]:
+                    task_type_count[tt] += 1
+        chart_data = [[k, v] for k, v in task_type_count.items()]
+        chart_data.append([
+            "Approved Leaves", detailed_data["leave"]['Approved']
+            if detailed_data["leave"] else 0
+        ])
+        chart_data.append([
+            "Applied Leaves", detailed_data["leave"]['Applied']
+            if detailed_data["leave"] else 0
+        ])
+        chart_data.append([
+            "Approved WFH", detailed_data["wfh"]['Approved']
+            if detailed_data["wfh"] else 0
+        ])
+        chart_data.append([
+            "Applied WFH", detailed_data["wfh"]['Applied']
+            if detailed_data["wfh"] else 0
+        ])
         chart_data = [["{}".format(d[0]), d[1]] for d in chart_data]
         return chart_data
 
     def week_data(self, detailed_data, week_stats):
         chart_data = defaultdict(float)
         for date, data in detailed_data['detailed'].items():
+            date = int(date)
             if 0 < date < week_stats["totalDays"]:
                 if date <= week_stats["numberOfDaysInFirstWeek"]:
-                    chart_data['week 1'] += sum(data["work"].values()) if data[
-                        "work"] else 0
+                    chart_data['week 1'] += sum(data["work"].values(
+                    )) if "work" in data and data["work"] else 0
                 else:
                     date -= week_stats["numberOfDaysInFirstWeek"]
                     chart_data['week {}'.format((date % 7) + 2)] += sum(data[
-                        "work"].values()) if data["work"] else 0
-
+                        "work"].values()) if "work" in data and data[
+                            "work"] else 0
         chart_data = [["{}".format(k), v] for k, v in chart_data.items()]
         return chart_data
 
