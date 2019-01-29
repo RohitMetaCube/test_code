@@ -408,24 +408,19 @@ class mongoDB:
                         approved = True
                         break
                 day_wise_data[int(date)]["wfh"] = approved
-        wfhs = {}
-        wfhs['Applied'] = sum(
-            [1 if 'wfh' in v else 0 for v in day_wise_data.values()])
-        wfhs['Approved'] = sum([
-            1 if 'wfh' in v and v['wfh'] else 0 for v in day_wise_data.values()
-        ])
         leaves = {}
-        leaves['Applied'] = sum(
-            [1 if 'leave' in v else 0 for v in day_wise_data.values()])
-        leaves['Approved'] = sum([
-            1 if 'leave' in v and v['leave'] else 0
-            for v in day_wise_data.values()
-        ])
+        wfhs = {}
         working = defaultdict(int)
         for v in day_wise_data.values():
             if 'work' in v:
                 for vk in v['work'].keys():
                     working[vk] += 1
+            if 'wfh' in v:
+                wfhs['Applied'] += 1
+                wfhs['Approved'] += (1 if v['wfh'] else 0)
+            if 'leave' in v:
+                leaves['Applied'] += 1
+                leaves['Approved'] += (1 if v['leave'] else 0)
         return {
             "wfh": wfhs,
             "leave": leaves,

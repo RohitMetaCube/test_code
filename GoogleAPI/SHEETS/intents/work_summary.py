@@ -84,11 +84,12 @@ class WorkSummary(object):
         for date, data in detailed_data['detailed'].items():
             if 0 < date < week_stats["totalDays"]:
                 if date <= week_stats["numberOfDaysInFirstWeek"]:
-                    chart_data['week 1'] += sum(data["work"].values())
+                    chart_data['week 1'] += sum(data["work"].values()) if data[
+                        "work"] else 0
                 else:
                     date -= week_stats["numberOfDaysInFirstWeek"]
                     chart_data['week {}'.format((date % 7) + 2)] += sum(data[
-                        "work"].values())
+                        "work"].values()) if data["work"] else 0
 
         chart_data = [["{}".format(k), v] for k, v in chart_data.items()]
         return chart_data

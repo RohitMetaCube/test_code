@@ -40,9 +40,10 @@ class botUI(object):
         month = str(month)
         year = str(year)
         key = (project, month, year)
-        if key in self.data:
+        if key in self.data and self.data[key]:
             soup = BeautifulSoup(open("templates/pie_chart.html"))
             for k, v in self.data[key].items():
+                print k, v
                 try:
                     m = soup.find('', {'id': k})
                     m["value"] = v
