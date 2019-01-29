@@ -2,6 +2,7 @@ import requests
 from config import config
 from time_sheet_api import TimeSheetAPI
 from BeautifulSoup import BeautifulSoup
+import time
 
 
 class WorkSummary(object):
@@ -12,18 +13,29 @@ class WorkSummary(object):
         self.project_obj = project_obj
         self.headers = config.REQUEST_HEADERS
 
-    def draw_pie_chart(self, data, project):
-        data = [["{}".format(d[0]), d[1]] for d in data]
+    def type_converter(self, value, dtype):
+        try:
+            value = dtype(value)
+        except:
+            value = None
+        return value
+
+    def draw_pie_chart(self, chart_data, project, month, year):
+        chart_data = [["{}".format(d[0]), d[1]] for d in chart_data]
         soup = BeautifulSoup(open("templates/pie_chart.html"))
         try:
             m = soup.find('', {'id': "data"})
-            m["value"] = data
+            m["value"] = chart_data
         except Exception as e:
             soup = "Error in pie chart data adding: {}".format(e)
         requests.post(
             "http://0.0.0.0:443/setPieChart",
-            json={"data": str(soup),
-                  "project": project})
+            json={
+                "data": str(soup),
+                "project": project,
+                "month": month,
+                "year": year
+            })
 
     def apply(self, *argv, **kwargs):
         session_id = None if WorkSummary.DIALOGFLOW_SESSION_PARAMETER not in kwargs[
@@ -77,23 +89,44 @@ class WorkSummary(object):
                                    wfh_details['Approved'])
                             for wfh_type, wfh_details in response[
                                 "summaryData"]["wfh"].items()) + "</table>")
-                    data = [[d[0], d[1]]
-                            for d in response["summaryData"]["work"].items()]
+                    chart_data = [
+                        [d[0], d[1]]
+                        for d in response["summaryData"]["work"].items()
+                    ]
                     for lt, ld in response["summaryData"]["leave"].items():
-                        data.append(
-                            ["Approved {} Leaves".format(lt), ld['Approved']])
-                        data.append(
-                            ["Applied {} Leaves".format(lt), ld['Applied']])
+                        chart_data.append([
+                            "Approved {} Leaves".format(lt), ld['Approved'] *
+                            config.DEFAULT_WORKING_HOURS_OF_A_DAY
+                        ])
+                        chart_data.append([
+                            "Applied {} Leaves".format(lt), ld['Applied'] *
+                            config.DEFAULT_WORKING_HOURS_OF_A_DAY
+                        ])
                     for lt, ld in response["summaryData"]["wfh"].items():
-                        data.append(
-                            ["Approved WFH".format(lt), ld['Approved']])
-                        data.append(["Applied WFH".format(lt), ld['Applied']])
+                        chart_data.append([
+                            "Approved WFH".format(lt), ld['Approved'] *
+                            config.DEFAULT_WORKING_HOURS_OF_A_DAY
+                        ])
+                        chart_data.append([
+                            "Applied WFH".format(lt), ld['Applied'] *
+                            config.DEFAULT_WORKING_HOURS_OF_A_DAY
+                        ])
+                    month = self.type_converter(
+                        data[TimeSheetAPI.MONTH_PARAMETER], int
+                    ) if TimeSheetAPI.MONTH_PARAMETER in data else time.localtime(
+                    )[1]
+                    year = self.type_converter(
+                        data[TimeSheetAPI.YEAR_PARAMETER], int
+                    ) if TimeSheetAPI.YEAR_PARAMETER in data else time.localtime(
+                    )[0]
                     self.draw_pie_chart(
-                        data, matching_project[config.WRS_PROJECT_ID])
-                    response[
-                        "fulfillmentText"] += "<br><a target='_blank' rel='noopener noreferrer' href='/showPieChart?project={}'>Pie Chart</a>".format(
-                            matching_project[config.WRS_PROJECT_ID])
-
+                        chart_data, matching_project[config.WRS_PROJECT_ID],
+                        month, year)
+                    response["fulfillmentText"] += (
+                        "<br><a target='_blank' rel='noopener noreferrer'"
+                        "href='/showPieChart?project={}&month={}&year={}'>Pie Chart</a>"
+                    ).format(matching_project[config.WRS_PROJECT_ID], month,
+                             year)
                 elif "error_message" in response:
                     response["fulfillmentText"] = response["error_message"]
                 else:
