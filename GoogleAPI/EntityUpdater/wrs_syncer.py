@@ -1,6 +1,7 @@
 import requests
 import config
 from entity_handler import EntityHandler
+import logging
 
 eh = EntityHandler()
 
@@ -11,6 +12,9 @@ def get_all_projects():
         headers={"Authorization": config.WRS_ACCESS_TOKENS},
         params={})
     r = r.json()
+    if "error" in r:
+        logging.info("Error In Projects fetching from WRS ::: {}".format(r[
+            "error"]))
     return r
 
 
@@ -26,6 +30,8 @@ def update_entity_names(entity_name="projectName"):
         pname.lower(): pname
         for pname in fetch_all_project_names()
     }
+    if not project_names:
+        return
     entities = eh.fetch_all_entities(
         project_id=config.PROJECT_ID,
         entity_type_id=config.ENTITIES[entity_name])
