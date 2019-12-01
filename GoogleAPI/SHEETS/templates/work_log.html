@@ -1,0 +1,83 @@
+<!-- <form action="http://13.59.133.238:443/wrs/form_webhook" method="POST"> -->
+<div id="formWarpper">
+  <form>
+    <div name='hidden_params'>
+    	<input type="hidden" name="source" value="HTML Form"/>
+    	<input type="hidden" name="intent" value="Add Work Log"/>
+    </div>
+    
+    <div>
+    Project Name:
+    </div>
+    <div>
+    <input type="text" name="projectName" value="" id=1><br>
+    </div>
+    
+    <div>
+    Date:
+    </div>
+    <div>
+      <input type="number" name="workingDate" min="1" max="31"  id=2>
+      <select name="month" id=3>
+        <option value=1>January</option>
+        <option value=2>February</option>
+        <option value=3>March</option>
+        <option value=4>April</option>
+        <option value=5>May</option>
+        <option value=6>June</option>
+        <option value=7>July</option>
+        <option value=8>August</option>
+        <option value=9>September</option>
+        <option value=10>October</option>
+        <option value=11>November</option>
+        <option value=12>December</option>
+      </select>
+      <select name="year" id=4>
+        <option value=2019>2019</option>
+        <option value=2020>2020</option>
+        <option value=2021>2021</option>
+      </select>
+    </div>
+    
+    <div>
+    Working Hours:
+    </div>
+    <div>
+    <input type="text" name="number" value="" id=5><br>
+    </div>
+    
+    <div>
+    Jira Ticket Number:
+    </div>
+    <div>
+    <input type="text" name="jiraTicketNumber" value="" id=6><br>
+    </div>
+    
+    <div>
+    Work Details:
+    </div>
+    <div>
+    <input type="text" name="any" value="" id=7><br>
+    </div>
+    
+    <div>
+    Task Type:
+    </div>
+    <div>
+    <select name="taskType" id=8>
+  	  <option value="Client communication">Client communication</option>
+  	  <option value="Documentation">Documentation</option>
+  	  <option value="R&D">R&D</option>
+  	  <option value="Team meeting">Team meeting</option>
+    </select>
+    </div>
+    
+    <br><br>
+    
+    <input type="button" id='button'value="Submit" onclick="requestDF()"/>
+
+    <!-- <div id="demo"></div> -->
+
+  </form>
+
+</div>
